@@ -9,6 +9,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, quotes, code blocks, and dividers via Tiptap.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
+- **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties; filter and sort table views; switch to a status-grouped board. Database cells are included in workspace search and JSON backups.
 - **Local persistence:** page content is stored in this browser's local storage. There is no account or cloud sync.
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
 - **Search:** search page titles and editor text.
@@ -49,7 +50,7 @@ npm run preview
 
 ## Current limitations
 
-- No database views with sortable/filterable properties, boards, calendars, relations, or rollups yet. Editor tables are document content, not structured databases.
+- Database features are intentionally focused: no formulas, relations, rollups, aggregations, calendar views, or per-view filters yet. Inline editor tables are document content; database pages are separate structured data.
 - No multi-device sync, user accounts, collaboration, or server-side storage.
 - Browser local storage has limited capacity and is not a substitute for a durable database for large workspaces.
 - Accessibility, browser compatibility, security review, dependency auditing, and end-to-end tests still need further work before production use.
