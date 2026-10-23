@@ -9,6 +9,7 @@ import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import { duplicateWorkspaceNote, mergeWorkspaceNotes, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
 import { createPageHtml, pageExportFilename } from "./lib/export";
+import { imageAltFromFilename, plainTextPreview } from "./lib/text";
 import { loadPersistedWorkspace, savePersistedWorkspace, type StorageBackend } from "./lib/persistence";
 import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
