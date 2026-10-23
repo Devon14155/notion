@@ -78,6 +78,12 @@ describe("searchNotes", () => {
     expect(searchNotes(notes, "soup & bread").map((n) => n.id)).toEqual(["two"]);
   });
 
+  it("searches structured database cell values", () => {
+    const databaseNote: WorkspaceNote = { ...notes[0], kind: "database", database };
+    expect(searchNotes([databaseNote], "review draft").map((note) => note.id)).toEqual(["one"]);
+    expect(searchNotes([databaseNote], "done").map((note) => note.id)).toEqual(["one"]);
+  });
+
   it("returns all records for a blank query", () => {
     expect(searchNotes(notes, "  ")).toEqual(notes);
   });
