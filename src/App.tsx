@@ -191,11 +191,11 @@ function App() {
           <button className="nav-item" onClick={() => setToast("Inbox is ready for a future notification integration")}><Inbox size={16}/><span>Inbox</span></button>
           <button className="nav-item" onClick={() => chooseSection("all")}><Home size={16}/><span>Home</span></button>
         </div>
-        <div className="side-label">WORKSPACE <button className="tiny-icon" aria-label="Add page" onClick={createNote}><Plus size={15}/></button></div>
+        <div className="side-label">WORKSPACE <button className="tiny-icon" aria-label="Add page" onClick={() => createNote()}><Plus size={15}/></button></div>
         <nav className="page-nav" aria-label="Workspace navigation">
           <button className={`nav-item ${section === "all" ? "selected" : ""}`} onClick={() => chooseSection("all")}><ChevronDown size={14}/><FileText size={15}/><span>Private pages</span></button>
           <PageTree pages={notes.filter(n => !n.trashed)} activeId={activeNote?.id ?? ""} expandedIds={expandedIds} onSelect={id => { setActiveId(id); setSection("all"); setMobileMenu(false); }} onToggleExpanded={id => setExpandedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onCreateChild={parentId => createNote(parentId)} />
-          <button className="nav-item muted-nav" onClick={createNote}><Plus size={15}/><span>Add a page</span></button>
+          <button className="nav-item muted-nav" onClick={() => createNote()}><Plus size={15}/><span>Add a page</span></button>
         </nav>
         <div className="side-label">PERSONAL</div>
         <nav className="page-nav">
@@ -251,7 +251,7 @@ function App() {
             </div>
             <EditorContent editor={editor}/>
             <div className="document-end"><span>✳</span><span>Made for your thoughts.</span></div>
-          </article> : <div className="empty-state"><div className="empty-state-icon">{section === "trash" ? "🗑️" : "✳️"}</div><h2>{section === "trash" ? "Trash is empty" : "A little room to think"}</h2><p>{section === "trash" ? "Deleted pages will show up here." : "Create a page and start capturing your ideas."}</p>{section !== "trash" && <button className="primary-button" onClick={createNote}><Plus size={16}/> Create a page</button>}</div>}
+          </article> : <div className="empty-state"><div className="empty-state-icon">{section === "trash" ? "🗑️" : "✳️"}</div><h2>{section === "trash" ? "Trash is empty" : "A little room to think"}</h2><p>{section === "trash" ? "Deleted pages will show up here." : "Create a page and start capturing your ideas."}</p>{section !== "trash" && <button className="primary-button" onClick={() => createNote()}><Plus size={16}/> Create a page</button>}</div>}
         </div>
         <footer className="statusbar"><div><span className="status-dot"/>{notes.filter(n => !n.trashed).length} pages <span className="status-separator">·</span> Local workspace</div><div className="status-shortcuts"><span><Command size={11}/> K to search</span><span><BookOpen size={12}/> Your space, your rules</span></div></footer>
       </main>
