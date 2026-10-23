@@ -10,7 +10,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
-- **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties, rename properties by double-clicking their headers, filter and sort table views, and switch to a status-grouped board. Database cells are included in workspace search and JSON backups.
+- **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties, rename properties by double-clicking their headers, filter and sort table views, switch to a status-grouped board, or see entries in a month calendar when a Date property is configured. Database cells are included in workspace search and JSON backups.
 - **Local persistence:** IndexedDB is the primary on-device store, with a one-time migration from legacy localStorage and a fallback for restricted browsers. Writes are debounced to keep editing responsive. There is no account or cloud sync.
 - **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
@@ -52,7 +52,7 @@ npm run preview
 
 ## Current limitations
 
-- Database features are intentionally focused: no formulas, relations, rollups, aggregations, calendar views, or per-view filters yet. Inline editor tables are document content; database pages are separate structured data.
+- Database features are intentionally focused: no formulas, relations, rollups, aggregations, or per-view filters yet. Calendar views require a Date property. Inline editor tables are document content; database pages are separate structured data.
 - No multi-device sync, user accounts, collaboration, or server-side storage.
 - The localStorage fallback has limited capacity; IndexedDB is preferred, but neither store replaces regular JSON backups. Local image uploads are limited to 512 KB each.
 - Accessibility, browser compatibility, security review, dependency auditing, and end-to-end tests still need further work before production use.
