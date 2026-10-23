@@ -5,13 +5,17 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 import { parseWorkspaceBackup, searchNotes } from "./lib/workspace";
 import PageTree from "./components/PageTree";
 import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2
 } from "lucide-react";
 
 type Note = {
@@ -33,6 +37,7 @@ const slashCommands = [
   { id: "bulletList", label: "Bulleted list", description: "Create a simple list", keywords: "unordered bullets" },
   { id: "orderedList", label: "Numbered list", description: "Create a numbered list", keywords: "ordered numbers" },
   { id: "taskList", label: "Checklist", description: "Add tasks you can check off", keywords: "todo tasks checkbox to do" },
+  { id: "table", label: "Table", description: "Insert an editable 3 × 3 table", keywords: "grid rows columns database" },
   { id: "quote", label: "Quote", description: "Highlight a quotation", keywords: "blockquote" },
   { id: "codeBlock", label: "Code block", description: "Display code with formatting", keywords: "code programming" },
   { id: "divider", label: "Divider", description: "Separate sections visually", keywords: "line separator horizontal rule" },
@@ -154,7 +159,7 @@ function App() {
   };
 
   const editor = useEditor({
-    extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
+    extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Table.configure({ resizable: true }), TableRow, TableHeader, TableCell, Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
     content: activeNote?.content ?? "",
     onUpdate: ({ editor: current }) => {
       const content = current.getHTML();
@@ -231,6 +236,7 @@ function App() {
       case "bulletList": chain.toggleBulletList().run(); break;
       case "orderedList": chain.toggleOrderedList().run(); break;
       case "taskList": chain.toggleTaskList().run(); break;
+      case "table": chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
       case "quote": chain.toggleBlockquote().run(); break;
       case "codeBlock": chain.setCodeBlock().run(); break;
       case "divider": chain.setHorizontalRule().run(); break;
@@ -385,13 +391,14 @@ function App() {
               <button className={editor?.isActive("bulletList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBulletList().run()} aria-label="Bulleted list"><List size={16}/></button>
               <button className={editor?.isActive("orderedList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleOrderedList().run()} aria-label="Numbered list"><ListOrdered size={16}/></button>
               <button className={editor?.isActive("taskList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleTaskList().run()} aria-label="Checklist"><CheckSquare size={15}/></button>
+              <button className={editor?.isActive("table") ? "tool-active" : ""} onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} aria-label="Insert table"><Table2 size={15}/></button>
               <button className={editor?.isActive("blockquote") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBlockquote().run()} aria-label="Quote"><Quote size={15}/></button>
             </div>
             <div className="editor-area" ref={editorAreaRef}>
               <EditorContent editor={editor}/>
               {slashMenu && filteredSlashCommands.length > 0 && <div className="slash-command-menu" role="listbox" aria-label="Slash commands" style={{ left: slashMenu.left, top: slashMenu.top }}>
                 {filteredSlashCommands.map((command, index) => <button key={command.id} type="button" role="option" aria-selected={slashMenu.selectedIndex === index} className={`slash-command-option ${slashMenu.selectedIndex === index ? "selected" : ""}`} onMouseDown={event => event.preventDefault()} onClick={() => executeSlashCommand(command.id)}>
-                  <span className="slash-command-glyph">{command.id === "heading1" ? "H1" : command.id === "heading2" ? "H2" : command.id === "heading3" ? "H3" : command.id === "bulletList" ? "•" : command.id === "orderedList" ? "1." : command.id === "taskList" ? "☑" : command.id === "quote" ? "“" : command.id === "codeBlock" ? "</>" : command.id === "divider" ? "—" : "T"}</span>
+                  <span className="slash-command-glyph">{command.id === "heading1" ? "H1" : command.id === "heading2" ? "H2" : command.id === "heading3" ? "H3" : command.id === "bulletList" ? "•" : command.id === "orderedList" ? "1." : command.id === "taskList" ? "☑" : command.id === "table" ? "▦" : command.id === "quote" ? "“" : command.id === "codeBlock" ? "</>" : command.id === "divider" ? "—" : "T"}</span>
                   <span className="slash-command-copy"><strong>{command.label}</strong><small>{command.description}</small></span>
                   {slashMenu.selectedIndex === index && <kbd>↵</kbd>}
                 </button>)}
