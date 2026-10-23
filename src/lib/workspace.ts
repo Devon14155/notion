@@ -236,3 +236,18 @@ export function duplicateWorkspaceNote(
   };
 }
 
+
+/**
+ * Merge an imported backup with the current workspace and validate the resulting
+ * graph. Checking only the incoming file is insufficient: a partial backup can
+ * introduce a cycle through a page that already exists locally.
+ */
+export function mergeWorkspaceNotes(
+  existing: WorkspaceNote[],
+  incoming: WorkspaceNote[]
+): WorkspaceNote[] {
+  const validatedIncoming = parseWorkspaceBackup(JSON.stringify(incoming));
+  const mergedById = new Map(existing.map((note) => [note.id, note]));
+  for (const note of validatedIncoming) mergedById.set(note.id, note);
+  return parseWorkspaceBackup(JSON.stringify([...mergedById.values()]));
+}
