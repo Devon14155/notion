@@ -16,7 +16,7 @@ export type DatabaseRow = {
 export type WorkspaceDatabase = {
   properties: DatabaseProperty[];
   rows: DatabaseRow[];
-  view: "table" | "board";
+  view: "table" | "board" | "calendar";
 };
 
 export type WorkspaceNote = {
@@ -64,7 +64,7 @@ function isWorkspaceDatabase(value: unknown): value is WorkspaceDatabase {
   const database = value as Record<string, unknown>;
   if (!Array.isArray(database.properties) || database.properties.length === 0 || !database.properties.every(isDatabaseProperty) ||
       !Array.isArray(database.rows) || !database.rows.every(isDatabaseRow) ||
-      (database.view !== "table" && database.view !== "board")) return false;
+      (database.view !== "table" && database.view !== "board" && database.view !== "calendar")) return false;
 
   const propertyIds = new Set<string>();
   for (const property of database.properties) {
