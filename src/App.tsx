@@ -649,7 +649,7 @@ function App() {
   const pageBreadcrumbs = useMemo(() => {
     const path: Note[] = [];
     const seen = new Set<string>();
-    let current = activeNote ?? null;
+    let current: Note | null = activeNote ?? null;
     while (current && !seen.has(current.id)) {
       seen.add(current.id);
       path.unshift(current);
