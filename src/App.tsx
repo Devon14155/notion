@@ -407,6 +407,7 @@ function App() {
     setBlockMenuOpen(false);
     setBlockControls(null);
     setSelectionToolbar(null);
+    setWorkspaceMenuOpen(false);
     setPageLinkQuery("");
     if (editor && activeNote) {
       const current = editor.getHTML();
@@ -838,7 +839,7 @@ function App() {
               </div>}
               {slashMenu && filteredSlashCommands.length === 0 && <div className="slash-command-menu slash-command-empty" style={{ left: slashMenu.left, top: slashMenu.top }}>No matching commands</div>}
             </div>
-            {selectionToolbar && editor && !editor.state.selection.empty && <div className="editor-toolbar floating-editor-toolbar" role="toolbar" aria-label="Text formatting" style={{ left: selectionToolbar.left, top: selectionToolbar.top }} onMouseDown={(event) => event.preventDefault()}>
+            {selectionToolbar && editor && !editor.state.selection.empty && <div className="editor-toolbar floating-editor-toolbar" role="toolbar" aria-label="Text formatting" style={{ left: selectionToolbar.left, top: selectionToolbar.top }} onMouseDown={(event) => { if (!(event.target instanceof HTMLInputElement)) event.preventDefault(); }}>
               <button className={editor.isActive("bold") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleBold().run()} aria-label="Bold" title="Bold"><Bold size={15}/></button>
               <button className={editor.isActive("italic") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleItalic().run()} aria-label="Italic" title="Italic"><Italic size={15}/></button>
               <span className="toolbar-separator"/>
