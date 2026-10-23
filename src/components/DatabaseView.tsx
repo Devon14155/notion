@@ -59,6 +59,8 @@ export default function DatabaseView({
   const [addingProperty, setAddingProperty] = useState(false);
   const [newPropertyName, setNewPropertyName] = useState("");
   const [newPropertyType, setNewPropertyType] = useState<DatabasePropertyType>("text");
+  const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [editingPropertyName, setEditingPropertyName] = useState("");
   const [propertyError, setPropertyError] = useState("");
 
   const titleProperty = database.properties[0];
@@ -124,6 +126,30 @@ export default function DatabaseView({
     setNewPropertyType("text");
     setPropertyError("");
     setAddingProperty(false);
+  };
+
+  const commitPropertyRename = (propertyId: string) => {
+    const currentProperty = database.properties.find((property) => property.id === propertyId);
+    const name = editingPropertyName.trim();
+    setEditingPropertyId(null);
+    if (!currentProperty) return;
+    if (!name) {
+      setEditingPropertyName(currentProperty.name);
+      setPropertyError("Property names cannot be empty.");
+      return;
+    }
+    if (database.properties.some((property) => property.id !== propertyId && property.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      setEditingPropertyName(currentProperty.name);
+      setPropertyError("A property with that name already exists.");
+      return;
+    }
+    if (name !== currentProperty.name) {
+      onDatabaseChange({
+        ...database,
+        properties: database.properties.map((property) => property.id === propertyId ? { ...property, name } : property)
+      });
+    }
+    setPropertyError("");
   };
 
   const deleteProperty = (propertyId: string) => {
@@ -209,14 +235,27 @@ export default function DatabaseView({
         {propertyError && <span className="database-property-error" role="alert">{propertyError}</span>}
       </form>}
 
+      {propertyError && !addingProperty && <div className="database-property-error database-property-error-banner" role="alert">{propertyError}</div>}
+
       {database.view === "table" ? <div className="database-table-wrap">
         <table className="database-table">
           <thead><tr>
             {database.properties.map((property) => <th key={property.id}>
-              <button className="database-sort-button" onClick={() => toggleSort(property.id)} aria-label={`Sort by ${property.name}`}>
+              {editingPropertyId === property.id ? <input
+                className="database-property-rename"
+                value={editingPropertyName}
+                autoFocus
+                aria-label={`Rename ${property.name} property`}
+                onChange={(event) => setEditingPropertyName(event.target.value)}
+                onBlur={() => commitPropertyRename(property.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
+                  if (event.key === "Escape") { setEditingPropertyName(property.name); setEditingPropertyId(null); setPropertyError(""); }
+                }}
+              /> : <button className="database-sort-button" onClick={() => toggleSort(property.id)} onDoubleClick={() => { setEditingPropertyId(property.id); setEditingPropertyName(property.name); setPropertyError(""); }} title="Double-click to rename" aria-label={`Sort by ${property.name}; double-click to rename`}>
                 <span>{property.name}</span>
                 {sort?.propertyId === property.id ? (sort.direction === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowDownUp size={11} />}
-              </button>
+              </button>}
               <button className="database-delete-property" disabled={database.properties.length <= 1} onClick={() => deleteProperty(property.id)} aria-label={`Delete ${property.name} property`} title="Delete property"><X size={12} /></button>
             </th>)}
             <th className="database-row-actions-heading" aria-label="Row actions" />
