@@ -63,6 +63,17 @@ const starterNotes: Note[] = [
   { id: "weekly", title: "Weekly planning", content: "<h2>This week</h2><p>Choose a few meaningful outcomes instead of an endless list.</p><ul><li>Review priorities</li><li>Break one large task into small steps</li><li>Leave room to think</li></ul>", updatedAt: Date.now() - 86400000, favorite: false, icon: "🗓️" }
 ];
 
+function notePreview(note: Note): string {
+  if (note.kind === "database" && note.database) {
+    const preview = note.database.rows.slice(0, 3).map((row) => note.database!.properties.map((property) => {
+      const value = row.cells[property.id];
+      return value === null || value === undefined || value === false ? "" : String(value);
+    }).filter(Boolean).join(" · ")).filter(Boolean).join(" — ");
+    return preview.slice(0, 85) || "Structured database";
+  }
+  return note.content.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim().slice(0, 85);
+}
+
 function loadNotes(): Note[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -240,7 +251,8 @@ function App() {
         const anchor = target.closest<HTMLAnchorElement>("a[href]");
         const href = anchor?.getAttribute("href") ?? "";
         if (!href.startsWith("#page=")) return false;
-        const pageId = decodeURIComponent(href.slice(6));
+        let pageId = "";
+        try { pageId = decodeURIComponent(href.slice(6)); } catch { return false; }
         if (!pageId || !latestNotesRef.current.some((note) => note.id === pageId && !note.trashed)) return false;
         event.preventDefault();
         setActiveId(pageId);
@@ -600,7 +612,7 @@ function App() {
           <div className="search-dialog">
             <div className="search-input-row"><Search size={18}/><input id="global-search" autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search pages and content…" onKeyDown={e => { if(e.key === "Escape") { setSearchOpen(false); setQuery(""); } }}/><kbd>ESC</kbd><button className="icon-button" onClick={() => { setSearchOpen(false); setQuery(""); }} aria-label="Close search"><X size={16}/></button></div>
             <div className="search-results-label">{query ? `RESULTS FOR “${query}”` : "YOUR PAGES"}</div>
-            {visibleNotes.length ? visibleNotes.map(note => <button className="search-result" key={note.id} onClick={() => { setActiveId(note.id); setSection(note.trashed ? "trash" : "all"); setSearchOpen(false); setQuery(""); }}><span>{note.icon}</span><span className="search-result-copy"><strong>{note.title || "Untitled"}</strong><small>{note.content.replace(/<[^>]+>/g," ").slice(0,85)}</small></span><ChevronRight size={15}/></button>) : <div className="empty-search"><SearchX size={25}/><span>No matching pages</span><small>Try another search term.</small></div>}
+            {visibleNotes.length ? visibleNotes.map(note => <button className="search-result" key={note.id} onClick={() => { setActiveId(note.id); setSection(note.trashed ? "trash" : "all"); setSearchOpen(false); setQuery(""); }}><span>{note.icon}</span><span className="search-result-copy"><strong>{note.title || "Untitled"}</strong><small>{notePreview(note)}</small></span><ChevronRight size={15}/></button>) : <div className="empty-search"><SearchX size={25}/><span>No matching pages</span><small>Try another search term.</small></div>}
             <div className="search-footer"><span><kbd>↵</kbd> Open page</span><span>Searches titles and page text</span></div>
           </div>
         </div>}
