@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Notion — Local-First Workspace",
+  "short_name": "Workspace",
+  "description": "A private, local-first workspace for notes, tasks, and ideas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f7f5",
+  "theme_color": "#f7f7f5",
+  "icons": [
+    {
+      "src": "./icons/lotus.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
