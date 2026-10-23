@@ -6,6 +6,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
 import { loadPersistedWorkspace, savePersistedWorkspace, type StorageBackend } from "./lib/persistence";
 import DatabaseView from "./components/DatabaseView";
@@ -14,7 +15,7 @@ import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink
 } from "lucide-react";
 
 type Note = {
@@ -90,6 +91,8 @@ function App() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [pageLinkPickerOpen, setPageLinkPickerOpen] = useState(false);
+  const [pageLinkQuery, setPageLinkQuery] = useState("");
   const slashMenuRef = useRef<SlashMenuState | null>(null);
   const editorAreaRef = useRef<HTMLDivElement>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
@@ -221,7 +224,7 @@ function App() {
 
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
-    extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Table.configure({ resizable: true }), TableRow, TableHeader, TableCell, Image.configure({ allowBase64: true, HTMLAttributes: { class: "page-image", loading: "lazy" } }), Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
+    extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Table.configure({ resizable: true }), TableRow, TableHeader, TableCell, Image.configure({ allowBase64: true, HTMLAttributes: { class: "page-image", loading: "lazy" } }), Link.configure({ openOnClick: false, autolink: true, defaultProtocol: "https", HTMLAttributes: { target: "_blank", rel: "noopener noreferrer nofollow" } }), Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
     content: activeNote?.content ?? "",
     onUpdate: ({ editor: current }) => {
       const content = current.getHTML();
@@ -231,6 +234,21 @@ function App() {
     onSelectionUpdate: ({ editor: current }) => updateSlashMenu(current),
     editorProps: {
       attributes: { class: "tiptap", "aria-label": "Page content editor" },
+      handleClick: (_view, _position, event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return false;
+        const anchor = target.closest<HTMLAnchorElement>("a[href]");
+        const href = anchor?.getAttribute("href") ?? "";
+        if (!href.startsWith("#page=")) return false;
+        const pageId = decodeURIComponent(href.slice(6));
+        if (!pageId || !latestNotesRef.current.some((note) => note.id === pageId && !note.trashed)) return false;
+        event.preventDefault();
+        setActiveId(pageId);
+        setSection("all");
+        setMobileMenu(false);
+        setPageLinkPickerOpen(false);
+        return true;
+      },
       handleKeyDown: (_view, event) => {
         const currentMenu = slashMenuRef.current;
         if (!currentMenu) return false;
@@ -269,11 +287,57 @@ function App() {
     slashMenuRef.current = null;
     setSlashMenu(null);
     setIconPickerOpen(false);
+    setPageLinkPickerOpen(false);
+    setPageLinkQuery("");
     if (editor && activeNote) {
       const current = editor.getHTML();
       if (current !== activeNote.content) editor.commands.setContent(activeNote.content || "");
     }
   }, [activeId, editor]);
+
+  const insertExternalLink = () => {
+    if (!editor) return;
+    const input = window.prompt("Paste an HTTPS or HTTP web address");
+    if (!input?.trim()) return;
+    let parsed: URL;
+    try {
+      parsed = new URL(input.trim());
+    } catch {
+      setToast("Enter a valid web address.");
+      return;
+    }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      setToast("Links must use HTTP or HTTPS.");
+      return;
+    }
+    if (editor.state.selection.empty) {
+      editor.chain().focus().insertContent({
+        type: "text",
+        text: parsed.toString(),
+        marks: [{ type: "link", attrs: { href: parsed.toString() } }]
+      }).run();
+    } else {
+      editor.chain().focus().setLink({ href: parsed.toString() }).run();
+    }
+    setPageLinkPickerOpen(false);
+  };
+
+  const insertPageLink = (targetPage: Note) => {
+    if (!editor) return;
+    const href = `#page=${encodeURIComponent(targetPage.id)}`;
+    if (editor.state.selection.empty) {
+      editor.chain().focus().insertContent({
+        type: "text",
+        text: targetPage.title.trim() || "Untitled",
+        marks: [{ type: "link", attrs: { href } }]
+      }).run();
+    } else {
+      editor.chain().focus().setLink({ href }).run();
+    }
+    setPageLinkPickerOpen(false);
+    setPageLinkQuery("");
+    setToast(`Linked to ${targetPage.title.trim() || "Untitled"}`);
+  };
 
   const insertImageFromUrl = () => {
     if (!editor) return;
