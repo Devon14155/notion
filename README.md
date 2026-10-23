@@ -17,11 +17,11 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Backups:** export all workspace data to JSON and import a validated backup.
 - **Appearance:** light and dark themes, responsive sidebar, and mobile navigation.
 - **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
-- **Automated checks:** unit tests cover backup validation and text search; GitHub Actions runs tests and a production build.
+- **Automated checks:** unit tests cover backup validation, structured database data, database-cell search, and safe duplication; GitHub Actions reports dependency advisories, runs tests, and builds production bundles with separate React/editor chunks.
 
 ## Requirements
 
-- Node.js 20 or newer
+- Node.js 22 or newer
 - npm
 
 ## Run locally
