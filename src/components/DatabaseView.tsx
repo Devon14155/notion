@@ -20,6 +20,7 @@ type DatabaseViewProps = {
   onToggleFavorite: () => void;
   onDuplicate: () => void;
   onTrash: () => void;
+  onExportHtml: () => void;
   onMessage: (message: string) => void;
 };
 
@@ -60,6 +61,7 @@ export default function DatabaseView({
   onToggleFavorite,
   onDuplicate,
   onTrash,
+  onExportHtml,
   onMessage
 }: DatabaseViewProps) {
   const [filter, setFilter] = useState("");
@@ -283,6 +285,7 @@ export default function DatabaseView({
         </div>
         <label className="database-filter"><Search size={14} /><input value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter database entries" placeholder="Filter entries..." /></label>
         <button className="database-action-button" onClick={() => { setAddingProperty((value) => !value); setPropertyError(""); }}><SlidersHorizontal size={14} /> Property</button>
+        <button className="database-action-button" onClick={onExportHtml} title="Export database as standalone HTML"><Download size={14} /> Export HTML</button>
         <button className="database-action-button" onClick={exportCsv} title="Download CSV file"><Download size={14} /> Export CSV</button>
         <button className="database-action-button" onClick={() => csvFileInputRef.current?.click()} title="Import a CSV file"><Upload size={14} /> Import CSV</button>
         <input ref={csvFileInputRef} type="file" accept=".csv,text/csv" hidden onChange={(event) => { void importCsv(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
