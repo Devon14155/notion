@@ -635,6 +635,42 @@ function App() {
           </div>
         </div>}
 
+        {settingsOpen && <div className="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" onMouseDown={(event) => { if (event.target === event.currentTarget) setSettingsOpen(false); }}>
+          <section className="settings-dialog">
+            <header className="settings-header">
+              <div><h2 id="settings-title">Settings</h2><p>Make this workspace feel like yours.</p></div>
+              <button className="icon-button" aria-label="Close settings" autoFocus onClick={() => setSettingsOpen(false)}><X size={17}/></button>
+            </header>
+            <div className="settings-body">
+              <section className="settings-section">
+                <div><h3>Appearance</h3><p>Choose your preferred theme. This setting stays on this device.</p></div>
+                <div className="settings-theme-options" role="group" aria-label="Color theme">
+                  <button className={!dark ? "selected" : ""} aria-pressed={!dark} onClick={() => setDark(false)}><Sun size={18}/><span>Light</span>{!dark && <CheckSquare size={15}/>}</button>
+                  <button className={dark ? "selected" : ""} aria-pressed={dark} onClick={() => setDark(true)}><Moon size={18}/><span>Dark</span>{dark && <CheckSquare size={15}/>}</button>
+                </div>
+              </section>
+              <section className="settings-section">
+                <div><h3>Data and storage</h3><p>Your notes stay in this browser profile. This app does not send page content to a server.</p></div>
+                <div className="settings-storage-status"><span className="status-dot"/><span>Current storage: <strong>{storageBackend === "indexeddb" ? "IndexedDB on this device" : "Browser localStorage fallback"}</strong></span></div>
+                <p className="settings-hint">There is no account or sync yet. Export backups regularly, especially before clearing browser data or changing devices.</p>
+                <div className="settings-actions">
+                  <button className="database-action-button primary" onClick={exportNotes}><Download size={14}/> Export workspace backup</button>
+                  <button className="database-action-button" onClick={() => document.getElementById("import-file")?.click()}><Upload size={14}/> Import backup</button>
+                </div>
+              </section>
+              <section className="settings-section">
+                <div><h3>Keyboard shortcuts</h3><p>Faster ways to move around and write.</p></div>
+                <div className="settings-shortcuts">
+                  <div><span>Open workspace search</span><kbd>Ctrl / ⌘ K</kbd></div>
+                  <div><span>Create a page</span><kbd>Ctrl / ⌘ N</kbd></div>
+                  <div><span>Open editor commands</span><kbd>/</kbd></div>
+                  <div><span>Close a menu</span><kbd>Esc</kbd></div>
+                </div>
+              </section>
+            </div>
+            <footer className="settings-footer"><span>Local-first by design</span><button className="database-action-button" onClick={() => setSettingsOpen(false)}>Done</button></footer>
+          </section>
+        </div>}
         <div className="page-scroll">
           {activeNote ? (activeNote.kind === "database" && activeNote.database && section !== "trash" ? <DatabaseView title={activeNote.title} icon={activeNote.icon} onIconChange={choosePageIcon} favorite={activeNote.favorite} updatedAt={activeNote.updatedAt} database={activeNote.database} onRename={renameActive} onDatabaseChange={updateActiveDatabase} onToggleFavorite={toggleFavorite} onDuplicate={duplicateActive} onTrash={moveToTrash} /> : <article className="document">
             <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> {storageBackend === "indexeddb" ? "Saved on this device" : "Saved in browser storage"}</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button>{section !== "trash" && <button className="icon-button" onClick={duplicateActive} aria-label="Duplicate page" title="Duplicate page"><Copy size={15}/></button>}<button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
