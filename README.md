@@ -23,7 +23,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 22.22.2 or newer (required by the current jsdom test dependency)
 - npm
 
 ## Free static deployment
