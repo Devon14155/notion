@@ -154,7 +154,7 @@ function App() {
   };
 
   const editor = useEditor({
-    extensions: [StarterKit, TaskList.configure({ nested: true }), TaskItem.configure({ nested: true }), Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
+    extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
     content: activeNote?.content ?? "",
     onUpdate: ({ editor: current }) => {
       const content = current.getHTML();
