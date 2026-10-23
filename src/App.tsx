@@ -15,7 +15,7 @@ import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink, Download, Upload
 } from "lucide-react";
 
 type Note = {
@@ -96,7 +96,11 @@ function App() {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => {
+    try { return localStorage.getItem("notion-workspace-theme-v1") === "dark"; }
+    catch { return false; }
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [section, setSection] = useState<"all" | "favorites" | "recent" | "trash">("all");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
@@ -108,6 +112,11 @@ function App() {
   const editorAreaRef = useRef<HTMLDivElement>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    try { localStorage.setItem("notion-workspace-theme-v1", dark ? "dark" : "light"); }
+    catch (error) { console.warn("Could not save the theme preference.", error); }
+  }, [dark]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,6 +182,15 @@ function App() {
     const timer = window.setTimeout(() => setToast(""), 2600);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSettingsOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [settingsOpen]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -587,7 +605,7 @@ function App() {
           <button className={`nav-item ${section === "trash" ? "selected" : ""}`} onClick={() => chooseSection("trash")}><Trash2 size={16}/><span>Trash</span></button>
         </nav>
         <div className="sidebar-bottom">
-          <button className="nav-item" onClick={() => setToast("Settings panel is coming next")}><Settings2 size={16}/><span>Settings</span></button>
+          <button className="nav-item" onClick={() => setSettingsOpen(true)}><Settings2 size={16}/><span>Settings</span></button>
           <div className="storage-note"><span className="status-dot"/><span>Saved on this device</span></div>
         </div>
       </aside>
