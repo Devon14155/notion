@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -20,6 +21,26 @@ type Note = {
   icon: string;
   parentId?: string;
   trashed?: boolean;
+};
+
+const slashCommands = [
+  { id: "text", label: "Text", description: "Start with plain text", keywords: "paragraph normal" },
+  { id: "heading1", label: "Heading 1", description: "A large section heading", keywords: "title h1" },
+  { id: "heading2", label: "Heading 2", description: "A medium section heading", keywords: "h2" },
+  { id: "heading3", label: "Heading 3", description: "A small section heading", keywords: "h3" },
+  { id: "bulletList", label: "Bulleted list", description: "Create a simple list", keywords: "unordered bullets" },
+  { id: "orderedList", label: "Numbered list", description: "Create a numbered list", keywords: "ordered numbers" },
+  { id: "quote", label: "Quote", description: "Highlight a quotation", keywords: "blockquote" },
+  { id: "codeBlock", label: "Code block", description: "Display code with formatting", keywords: "code programming" },
+  { id: "divider", label: "Divider", description: "Separate sections visually", keywords: "line separator horizontal rule" },
+] as const;
+
+type SlashCommandId = (typeof slashCommands)[number]["id"];
+type SlashMenuState = {
+  query: string;
+  left: number;
+  top: number;
+  selectedIndex: number;
 };
 
 const STORAGE_KEY = "notion-workspace-notes-v1";
@@ -51,6 +72,9 @@ function App() {
   const [section, setSection] = useState<"all" | "favorites" | "recent" | "trash">("all");
   const [mobileMenu, setMobileMenu] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+  const slashMenuRef = useRef<SlashMenuState | null>(null);
+  const editorAreaRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -92,23 +116,118 @@ function App() {
     return q ? searchNotes(scoped, q) : scoped;
   }, [notes, query, section]);
 
-  const activeNote = notes.find((n) => n.id === activeId && !n.trashed) ?? visibleNotes[0] ?? null;
+  const activeNote = notes.find((n) => n.id === activeId && (section === "trash" ? n.trashed : !n.trashed)) ?? visibleNotes[0] ?? null;
+
+  const updateSlashMenu = (current: Editor) => {
+    const selection = current.state.selection;
+    const $from = selection.$from;
+    const text = $from.parent.textContent;
+    const match = /^\\/([a-z0-9 ]*)$/i.exec(text);
+    if (!selection.empty || !$from.parent.isTextblock || $from.parentOffset !== $from.parent.content.size || !match) {
+      slashMenuRef.current = null;
+      setSlashMenu(null);
+      return;
+    }
+
+    let left = 12;
+    let top = 8;
+    const area = editorAreaRef.current;
+    if (area) {
+      try {
+        const coords = current.view.coordsAtPos(selection.from);
+        const bounds = area.getBoundingClientRect();
+        left = Math.max(8, Math.min(Math.max(8, bounds.width - 265), coords.left - bounds.left));
+        top = Math.max(8, coords.bottom - bounds.top + 4);
+      } catch {
+        // The command menu remains usable at its default position if layout coordinates are unavailable.
+      }
+    }
+    const next: SlashMenuState = { query: match[1].toLowerCase(), left, top, selectedIndex: 0 };
+    slashMenuRef.current = next;
+    setSlashMenu(next);
+  };
+
   const editor = useEditor({
     extensions: [StarterKit, Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
     content: activeNote?.content ?? "",
     onUpdate: ({ editor: current }) => {
       const content = current.getHTML();
       setNotes((prev) => prev.map((n) => n.id === activeId ? { ...n, content, updatedAt: Date.now() } : n));
+      updateSlashMenu(current);
     },
-    editorProps: { attributes: { class: "tiptap", "aria-label": "Page content editor" } }
+    onSelectionUpdate: ({ editor: current }) => updateSlashMenu(current),
+    editorProps: {
+      attributes: { class: "tiptap", "aria-label": "Page content editor" },
+      handleKeyDown: (_view, event) => {
+        const currentMenu = slashMenuRef.current;
+        if (!currentMenu) return false;
+        const matches = slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(currentMenu.query));
+        if (event.key === "Escape") {
+          event.preventDefault();
+          slashMenuRef.current = null;
+          setSlashMenu(null);
+          return true;
+        }
+        if (event.key === "ArrowDown" && matches.length) {
+          event.preventDefault();
+          const next = { ...currentMenu, selectedIndex: (currentMenu.selectedIndex + 1) % matches.length };
+          slashMenuRef.current = next;
+          setSlashMenu(next);
+          return true;
+        }
+        if (event.key === "ArrowUp" && matches.length) {
+          event.preventDefault();
+          const next = { ...currentMenu, selectedIndex: (currentMenu.selectedIndex - 1 + matches.length) % matches.length };
+          slashMenuRef.current = next;
+          setSlashMenu(next);
+          return true;
+        }
+        if ((event.key === "Enter" || event.key === "Tab") && matches.length) {
+          event.preventDefault();
+          executeSlashCommand(matches[currentMenu.selectedIndex % matches.length].id);
+          return true;
+        }
+        return false;
+      }
+    }
   }, [activeId]);
 
   useEffect(() => {
+    slashMenuRef.current = null;
+    setSlashMenu(null);
     if (editor && activeNote) {
       const current = editor.getHTML();
       if (current !== activeNote.content) editor.commands.setContent(activeNote.content || "");
     }
   }, [activeId, editor]);
+
+  const executeSlashCommand = (commandId: SlashCommandId) => {
+    if (!editor) return;
+    const { selection } = editor.state;
+    const $from = selection.$from;
+    if (!selection.empty || !$from.parent.isTextblock || !/^\\/([a-z0-9 ]*)$/i.test($from.parent.textContent)) {
+      slashMenuRef.current = null;
+      setSlashMenu(null);
+      return;
+    }
+
+    const from = $from.start();
+    const to = $from.end();
+    const chain = editor.chain().focus().deleteRange({ from, to });
+    slashMenuRef.current = null;
+    setSlashMenu(null);
+    switch (commandId) {
+      case "text": chain.setParagraph().run(); break;
+      case "heading1": chain.setHeading({ level: 1 }).run(); break;
+      case "heading2": chain.setHeading({ level: 2 }).run(); break;
+      case "heading3": chain.setHeading({ level: 3 }).run(); break;
+      case "bulletList": chain.toggleBulletList().run(); break;
+      case "orderedList": chain.toggleOrderedList().run(); break;
+      case "quote": chain.toggleBlockquote().run(); break;
+      case "codeBlock": chain.setCodeBlock().run(); break;
+      case "divider": chain.setHorizontalRule().run(); break;
+    }
+  };
 
   const createNote = (parentId?: string) => {
     const note: Note = { id: crypto.randomUUID(), title: "Untitled", content: "<p></p>", updatedAt: Date.now(), favorite: false, icon: "📄", ...(parentId ? { parentId } : {}) };
@@ -176,6 +295,8 @@ function App() {
   };
 
   const chooseSection = (value: typeof section) => { setSection(value); setQuery(""); if (value === "trash") { setActiveId(notes.find(n => n.trashed)?.id ?? ""); } else if (value === "favorites") { setActiveId(notes.find(n => n.favorite && !n.trashed)?.id ?? ""); } else { setActiveId(notes.find(n => !n.trashed)?.id ?? ""); } };
+
+  const filteredSlashCommands = slashMenu ? slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(slashMenu.query)) : [];
 
   return (
     <div className={dark ? "app-shell dark" : "app-shell"}>
@@ -249,7 +370,17 @@ function App() {
               <button className={editor?.isActive("orderedList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleOrderedList().run()} aria-label="Numbered list"><ListOrdered size={16}/></button>
               <button className={editor?.isActive("blockquote") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBlockquote().run()} aria-label="Quote"><Quote size={15}/></button>
             </div>
-            <EditorContent editor={editor}/>
+            <div className="editor-area" ref={editorAreaRef}>
+              <EditorContent editor={editor}/>
+              {slashMenu && filteredSlashCommands.length > 0 && <div className="slash-command-menu" role="listbox" aria-label="Slash commands" style={{ left: slashMenu.left, top: slashMenu.top }}>
+                {filteredSlashCommands.map((command, index) => <button key={command.id} type="button" role="option" aria-selected={slashMenu.selectedIndex === index} className={`slash-command-option ${slashMenu.selectedIndex === index ? "selected" : ""}`} onMouseDown={event => event.preventDefault()} onClick={() => executeSlashCommand(command.id)}>
+                  <span className="slash-command-glyph">{command.id === "heading1" ? "H1" : command.id === "heading2" ? "H2" : command.id === "heading3" ? "H3" : command.id === "bulletList" ? "•" : command.id === "orderedList" ? "1." : command.id === "quote" ? "“" : command.id === "codeBlock" ? "</>" : command.id === "divider" ? "—" : "T"}</span>
+                  <span className="slash-command-copy"><strong>{command.label}</strong><small>{command.description}</small></span>
+                  {slashMenu.selectedIndex === index && <kbd>↵</kbd>}
+                </button>)}
+              </div>}
+              {slashMenu && filteredSlashCommands.length === 0 && <div className="slash-command-menu slash-command-empty" style={{ left: slashMenu.left, top: slashMenu.top }}>No matching commands</div>}
+            </div>
             <div className="document-end"><span>✳</span><span>Made for your thoughts.</span></div>
           </article> : <div className="empty-state"><div className="empty-state-icon">{section === "trash" ? "🗑️" : "✳️"}</div><h2>{section === "trash" ? "Trash is empty" : "A little room to think"}</h2><p>{section === "trash" ? "Deleted pages will show up here." : "Create a page and start capturing your ideas."}</p>{section !== "trash" && <button className="primary-button" onClick={() => createNote()}><Plus size={16}/> Create a page</button>}</div>}
         </div>
