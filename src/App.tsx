@@ -285,6 +285,32 @@ function App() {
     }
   };
 
+  const locateEditorBlock = (target: EventTarget | null, area: HTMLDivElement | null) => {
+    if (!editor || blockMenuOpen || !area) return;
+    if (!(target instanceof Element) || target.closest(".editor-block-handle, .editor-block-menu")) return;
+    const block = target.closest<HTMLElement>(".tiptap > *");
+    if (!block) { setBlockControls(null); return; }
+    try {
+      const domPos = editor.view.posAtDOM(block, 0);
+      const resolved = editor.state.doc.resolve(domPos);
+      if (resolved.depth === 0) return;
+      const pos = resolved.before(resolved.depth);
+      const top = Math.max(0, block.getBoundingClientRect().top - area.getBoundingClientRect().top);
+      setBlockControls(previous => previous?.pos === pos && Math.abs(previous.top - top) < 1 ? previous : { pos, top });
+    } catch {
+      setBlockControls(null);
+    }
+  };
+
+  const insertEditorBlockAbove = () => {
+    if (!editor || !blockControls) return;
+    const pos = blockControls.pos;
+    editor.chain().focus().insertContentAt(pos, { type: "paragraph" }).setTextSelection(pos + 1).run();
+    setBlockMenuOpen(false);
+    setBlockControls(null);
+    setToast("Block added");
+  };
+
   const duplicateEditorBlock = () => {
     if (!editor || !blockControls) return;
     const node = editor.state.doc.nodeAt(blockControls.pos);
@@ -713,6 +739,9 @@ function App() {
             <div className="workspace-menu-wrap">
               <button className="icon-button more-button" aria-label="More page actions" aria-expanded={workspaceMenuOpen} title="More page actions" onClick={() => setWorkspaceMenuOpen(value => !value)}><MoreHorizontal size={18}/></button>
               {workspaceMenuOpen && <div className="workspace-menu" role="menu" aria-label="More page actions">
+                <button role="menuitem" onClick={() => { duplicateActive(); setWorkspaceMenuOpen(false); }} disabled={!activeNote || section === "trash"}><Copy size={14}/> {activeNote?.kind === "database" ? "Duplicate database" : "Duplicate page"}</button>
+                <button role="menuitem" onClick={() => { moveToTrash(); setWorkspaceMenuOpen(false); }} disabled={!activeNote || section === "trash"}><Trash2 size={14}/> Move to trash</button>
+                <span className="workspace-menu-divider"/>
                 <button role="menuitem" onClick={() => { exportActivePage(); setWorkspaceMenuOpen(false); }} disabled={!activeNote || section === "trash"}><Download size={14}/> Export page as HTML</button>
                 <button role="menuitem" onClick={() => { exportNotes(); setWorkspaceMenuOpen(false); }}><Download size={14}/> Export workspace backup</button>
                 <button role="menuitem" onClick={() => { document.getElementById("import-file")?.click(); setWorkspaceMenuOpen(false); }}><Upload size={14}/> Import workspace backup</button>
@@ -778,25 +807,12 @@ function App() {
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
             {section === "trash" && <div className="trash-banner"><Trash2 size={16}/> This page is in the trash. <button onClick={() => restoreNote(activeNote.id)}>Restore page</button><button className="permanent-delete" onClick={() => permanentlyDelete(activeNote.id)}>Delete permanently</button></div>}
             <div className="editor-area" ref={editorAreaRef}
-              onMouseMove={(event) => {
-                if (!editor || blockMenuOpen) return;
-                const target = event.target;
-                if (!(target instanceof Element) || target.closest(".editor-block-handle, .editor-block-menu")) return;
-                const block = target.closest<HTMLElement>(".tiptap > *");
-                if (!block) { setBlockControls(null); return; }
-                try {
-                  const domPos = editor.view.posAtDOM(block, 0);
-                  const resolved = editor.state.doc.resolve(domPos);
-                  if (resolved.depth === 0) return;
-                  const pos = resolved.before(resolved.depth);
-                  const top = Math.max(0, block.getBoundingClientRect().top - event.currentTarget.getBoundingClientRect().top);
-                  setBlockControls(previous => previous?.pos === pos && Math.abs(previous.top - top) < 1 ? previous : { pos, top });
-                } catch { setBlockControls(null); }
-              }}
-              onMouseLeave={() => { if (!blockMenuOpen) setBlockControls(null); }}
+              onPointerMove={(event) => locateEditorBlock(event.target, event.currentTarget)}
+              onPointerDown={(event) => { if (event.pointerType === "touch") locateEditorBlock(event.target, event.currentTarget); }}
+              onPointerLeave={() => { if (!blockMenuOpen) setBlockControls(null); }}
             >
               {blockControls && <button type="button" className="editor-block-handle" style={{ top: blockControls.top }} aria-label="Open block actions" title="Block actions"
-                onMouseDown={(event) => event.preventDefault()}
+                onPointerDown={(event) => event.preventDefault()}
                 onClick={() => {
                   if (!editor || !blockControls) return;
                   editor.chain().focus().setNodeSelection(blockControls.pos).run();
@@ -804,8 +820,9 @@ function App() {
                   setBlockMenuOpen(value => !value);
                 }}><GripVertical size={16}/></button>}
               {blockMenuOpen && blockControls && <div className="editor-block-menu" style={{ top: blockControls.top + 26 }} role="menu" aria-label="Block actions">
-                <button role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={duplicateEditorBlock}><Copy size={14}/> Duplicate block</button>
-                <button role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={deleteEditorBlock}><Trash2 size={14}/> Delete block</button>
+                <button role="menuitem" onPointerDown={(event) => event.preventDefault()} onClick={insertEditorBlockAbove}><Plus size={14}/> Add block above</button>
+                <button role="menuitem" onPointerDown={(event) => event.preventDefault()} onClick={duplicateEditorBlock}><Copy size={14}/> Duplicate block</button>
+                <button role="menuitem" onPointerDown={(event) => event.preventDefault()} onClick={deleteEditorBlock}><Trash2 size={14}/> Delete block</button>
               </div>}
 
               <EditorContent editor={editor}/>
