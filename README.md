@@ -6,7 +6,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 
 ## Features
 
-- **Rich-text pages:** headings, bold, italic, visible undo/redo controls, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
+- **Rich-text pages:** headings, bold, italic, visible undo/redo controls, code block and divider toolbar actions, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
@@ -55,7 +55,7 @@ npm run preview
 - Notes stay in the browser profile where they were created.
 - Clearing site data or using another browser/device can make local notes unavailable. Offline app-shell caching does not sync or back up note data by itself.
 - Export regular JSON backups using **Export backup**.
-- Import merges pages by ID; records with duplicate IDs, malformed fields, or cyclic parent/child relationships within one backup are rejected.
+- Import merges pages by ID; records with duplicate IDs, malformed fields, invalid database cell types/options/dates, or cyclic page hierarchies are rejected. Imports are also validated after merging with existing pages so a partial backup cannot introduce a cross-file hierarchy cycle.
 - No synchronization or end-to-end encrypted cloud backup is implemented yet.
 
 ## Current limitations
