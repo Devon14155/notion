@@ -6,7 +6,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 
 ## Features
 
-- **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, quotes, code blocks, and dividers via Tiptap.
+- **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
