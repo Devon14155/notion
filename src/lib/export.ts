@@ -11,13 +11,12 @@ function escapeHtml(value: unknown): string {
 
 function sanitizeEditorHtml(html: string): string {
   return html
-    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi, "")
-    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\\b[^>]*\\/?\\s*>/gi, "")
-    .replace(/\\s+on[a-z]+\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)/gi, "")
-    .replace(/\\s+(href|src|xlink:href)\\s*=\\s*(["'])\\s*(?:javascript|vbscript):[\\s\\S]*?\\2/gi, "")
-    .replace(/\\s+(href|src|xlink:href)\\s*=\\s*(?:javascript|vbscript):[^\\s>]*/gi, "");
+    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, "")
+    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\b[^>]*\/?\s*>/gi, "")
+    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/\s+(href|src|xlink:href)\s*=\s*(["'])\s*(?:javascript|vbscript):[\s\S]*?\2/gi, "")
+    .replace(/\s+(href|src|xlink:href)\s*=\s*(?:javascript|vbscript):[^\s>]*/gi, "");
 }
-
 function databaseTable(note: WorkspaceNote): string {
   const database = note.database;
   if (!database) return "";
