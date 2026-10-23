@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-
 :root{font-family:"DM Sans",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#242522;background:#fff;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-optical-sizing:auto;font-weight:400;font-size:14px}
 *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #8e9c86;outline-offset:2px}
 .app-shell{--surface:#fff;--sidebar:#f7f7f5;--soft:#f0f0ed;--line:#e9e9e5;--text:#242522;--muted:#898b83;--hover:#edeee9;--accent:#5d7058;display:flex;width:100%;height:100dvh;min-height:560px;background:var(--surface);color:var(--text);overflow:hidden}
@@ -59,3 +57,213 @@
 @media(max-width:520px){.settings-overlay{padding:8px}.settings-dialog{max-height:92dvh;border-radius:10px}.settings-header{padding:18px 15px 14px}.settings-body{padding:0 15px}.settings-section{padding:15px 0}.settings-actions>.database-action-button{flex:1}.settings-footer{padding:11px 15px}}
 
 .editor-history-button:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}.editor-history-button:not(:disabled):hover{background:var(--sidebar);color:var(--text)}
+
+
+/* Notion-inspired workspace polish: quiet chrome, system typography, and an editor-first canvas. */
+:root {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #252525;
+  background: #fff;
+  font-size: 14px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body, button, input, select, textarea { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.app-shell {
+  --surface: #fff;
+  --sidebar: #fbfbfa;
+  --soft: #f5f5f4;
+  --line: #e9e9e7;
+  --text: #252525;
+  --muted: #73736f;
+  --hover: #efefed;
+  --accent: #2383e2;
+}
+.app-shell.dark {
+  --surface: #191919;
+  --sidebar: #202020;
+  --soft: #2a2a2a;
+  --line: #343434;
+  --text: #e9e9e9;
+  --muted: #a5a5a5;
+  --hover: #303030;
+  --accent: #5296df;
+}
+.sidebar {
+  width: 245px;
+  flex-basis: 245px;
+  padding: 8px 8px 12px;
+  border-right: 1px solid var(--line);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.workspace-switcher { gap: 8px; padding: 5px 5px 13px; min-width: 0; }
+.workspace-mark {
+  width: 27px;
+  height: 27px;
+  border-radius: 5px;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  color: #191919;
+  box-shadow: none;
+  font: 800 17px/1 ui-sans-serif, sans-serif;
+}
+.workspace-meta strong { font-size: 13px; font-weight: 600; letter-spacing: -.15px; }
+.workspace-meta span { font-size: 11px; color: var(--muted); }
+.sidebar-actions { gap: 1px; margin-bottom: 13px; }
+.nav-item {
+  height: 29px;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.nav-item:hover, .page-link:hover { background: var(--hover); color: var(--text); }
+.nav-item.selected { background: var(--hover); color: var(--text); }
+.nav-item kbd { color: var(--muted); font-size: 10px; }
+.side-label {
+  padding: 8px 7px 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.tiny-icon { width: 21px; height: 21px; }
+.page-nav { gap: 1px; margin-bottom: 13px; }
+.page-tree { gap: 1px; margin: 1px 0 3px; }
+.page-tree-row { height: 29px; border-radius: 4px; }
+.page-tree-row.active { background: #ebebea; color: #252525; }
+.page-tree-row.active .page-tree-link { color: #252525; }
+.dark .page-tree-row.active { background: #333; color: #f2f2f2; }
+.dark .page-tree-row.active .page-tree-link { color: #f2f2f2; }
+.page-tree-link { height: 27px; font-size: 12.5px; color: var(--text); }
+.page-tree-expand { width: 17px; flex-basis: 17px; }
+.page-tree-add { opacity: 0; }
+.sidebar-bottom { flex-shrink: 0; padding-top: 8px; background: var(--sidebar); }
+.storage-note { padding: 9px 8px 0; font-size: 11px; }
+.main-area { min-height: 0; }
+.topbar {
+  height: 45px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--line);
+  gap: 10px;
+}
+.breadcrumbs { gap: 7px; color: var(--muted); font-size: 12px; }
+.crumb-muted { color: var(--muted); }
+.crumb-current { font-weight: 500; max-width: min(42vw, 480px); }
+.topbar-actions { gap: 3px; }
+.icon-button, .tiny-icon { border-radius: 4px; }
+.share-button {
+  height: 29px;
+  border-radius: 4px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+.page-scroll { scrollbar-gutter: stable; }
+.document {
+  max-width: 900px;
+  padding: 66px 70px 64px;
+}
+.page-actions-row { margin-bottom: 19px; }
+.page-icon-large { font-size: 38px; }
+.page-icon-picker-trigger { border-radius: 5px; }
+.document-title {
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: clamp(31px, 3.5vw, 40px);
+  line-height: 1.18;
+  letter-spacing: -1.25px;
+  margin-bottom: 17px;
+}
+.document-title::placeholder { color: #b8b8b5; }
+.document-meta { font-size: 11px; margin-bottom: 23px; gap: 8px; }
+.saved-label { font-size: 11px; }
+.editor-toolbar {
+  border-top: 0;
+  padding: 2px 0 9px;
+  margin-bottom: 5px;
+  gap: 2px;
+  opacity: 1;
+}
+.editor-toolbar button {
+  width: 29px;
+  height: 28px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.editor-toolbar button:hover, .editor-toolbar button.tool-active { background: var(--hover); color: var(--text); }
+.toolbar-separator { margin: 0 4px; }
+.tiptap {
+  min-height: 280px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text);
+}
+.tiptap p { margin: 0 0 11px; }
+.tiptap h1, .tiptap h2, .tiptap h3 {
+  font-family: inherit;
+  color: var(--text);
+  font-weight: 650;
+  letter-spacing: -.55px;
+  line-height: 1.3;
+}
+.tiptap h1 { font-size: 30px; margin: 30px 0 10px; }
+.tiptap h2 { font-size: 24px; margin: 27px 0 9px; }
+.tiptap h3 { font-size: 20px; margin: 23px 0 8px; }
+.tiptap ul, .tiptap ol { padding-left: 26px; margin: 9px 0 16px; }
+.tiptap li { margin: 3px 0; padding-left: 2px; }
+.tiptap blockquote {
+  border-left: 3px solid #c9c9c5;
+  margin: 17px 0;
+  padding: 2px 0 2px 14px;
+  color: var(--muted);
+}
+.dark .tiptap blockquote { border-left-color: #606060; }
+.tiptap code { border-radius: 3px; background: var(--soft); padding: 2px 4px; }
+.tiptap .tableWrapper { border-radius: 4px; }
+.tiptap table td, .tiptap table th { border-color: var(--line); }
+.document-end, .statusbar { display: none; }
+.empty-state h2 { font-family: inherit; letter-spacing: -.5px; }
+.primary-button { border-radius: 4px; background: #2383e2; }
+.primary-button:hover { background: #1674cf; }
+.search-overlay { background: #00000038; backdrop-filter: blur(2px); }
+.search-dialog { border-radius: 8px; box-shadow: 0 16px 56px #00000020; }
+.search-input-row { height: 53px; }
+.search-result:hover { background: var(--hover); }
+.search-result, .search-footer { font-size: 12px; }
+.slash-command-menu { border-radius: 7px; box-shadow: 0 8px 28px #00000018; }
+.slash-command-glyph { border-radius: 4px; }
+.page-icon-picker { border-radius: 7px; }
+.trash-banner { border-radius: 4px; }
+.toast { border-radius: 5px; box-shadow: 0 4px 18px #00000020; }
+.database-toolbar { border-top-color: var(--line); }
+.database-view-switch { border-radius: 5px; }
+.database-view-switch button, .database-action-button { border-radius: 4px; font-size: 12px; }
+.database-table-wrap { border-radius: 4px; }
+.database-board-card { border-radius: 5px; }
+@media (min-width: 1200px) {
+  .document { padding-top: 68px; }
+}
+@media (max-width: 900px) {
+  .sidebar { width: 225px; flex-basis: 225px; }
+  .topbar { padding: 0 14px; }
+  .document { padding: 46px 36px 44px; }
+}
+@media (max-width: 700px) {
+  .sidebar { width: 270px; flex-basis: 270px; }
+  .sidebar-collapsed { width: 270px; flex-basis: 270px; }
+  .topbar { height: 45px; padding: 0 9px; }
+  .document { padding: 34px 21px 38px; }
+  .document-title { font-size: 31px; letter-spacing: -1px; }
+  .tiptap { font-size: 16px; line-height: 1.7; }
+  .editor-toolbar { flex-wrap: wrap; row-gap: 4px; }
+  .saved-label { font-size: 0; margin-right: 2px; }
+  .saved-label .status-dot { width: 7px; height: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+}
