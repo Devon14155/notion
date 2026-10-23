@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight, Plus, FileText } from "lucide-react";
+import type { ReactNode } from "react";
 import type { WorkspaceNote } from "../lib/workspace";
 
 type PageTreeProps = {
@@ -33,7 +34,7 @@ export default function PageTree({
   );
   const visited = new Set<string>();
 
-  const renderPage = (page: WorkspaceNote, depth: number): React.ReactNode => {
+  const renderPage = (page: WorkspaceNote, depth: number): ReactNode => {
     if (visited.has(page.id)) return null;
     visited.add(page.id);
     const children = childrenByParent.get(page.id) ?? [];
