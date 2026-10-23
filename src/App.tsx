@@ -662,6 +662,8 @@ function App() {
                 <div><h3>Keyboard shortcuts</h3><p>Faster ways to move around and write.</p></div>
                 <div className="settings-shortcuts">
                   <div><span>Open workspace search</span><kbd>Ctrl / ⌘ K</kbd></div>
+                  <div><span>Undo editor change</span><kbd>Ctrl / ⌘ Z</kbd></div>
+                  <div><span>Redo editor change</span><kbd>Ctrl / ⌘ Shift Z</kbd></div>
                   <div><span>Create a page</span><kbd>Ctrl / ⌘ N</kbd></div>
                   <div><span>Open editor commands</span><kbd>/</kbd></div>
                   <div><span>Close a menu</span><kbd>Esc</kbd></div>
