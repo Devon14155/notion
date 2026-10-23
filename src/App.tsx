@@ -50,6 +50,12 @@ const slashCommands = [
 ] as const;
 
 type SlashCommandId = (typeof slashCommands)[number]["id"];
+
+function slashCommandCategory(id: SlashCommandId): string {
+  if (id === "image" || id === "link") return "Media & links";
+  if (id === "codeBlock") return "Advanced blocks";
+  return "Basic blocks";
+}
 type SlashMenuState = {
   query: string;
   left: number;
@@ -804,11 +810,14 @@ function App() {
 
               <EditorContent editor={editor}/>
               {slashMenu && filteredSlashCommands.length > 0 && <div className="slash-command-menu" role="listbox" aria-label="Slash commands" style={{ left: slashMenu.left, top: slashMenu.top }}>
-                {filteredSlashCommands.map((command, index) => <button key={command.id} type="button" role="option" aria-selected={slashMenu.selectedIndex === index} className={`slash-command-option ${slashMenu.selectedIndex === index ? "selected" : ""}`} onMouseDown={event => event.preventDefault()} onClick={() => executeSlashCommand(command.id)}>
-                  <span className="slash-command-glyph">{command.id === "heading1" ? "H1" : command.id === "heading2" ? "H2" : command.id === "heading3" ? "H3" : command.id === "bulletList" ? "•" : command.id === "orderedList" ? "1." : command.id === "taskList" ? "☑" : command.id === "table" ? "▦" : command.id === "image" ? "▧" : command.id === "quote" ? "“" : command.id === "codeBlock" ? "</>" : command.id === "divider" ? "—" : "T"}</span>
-                  <span className="slash-command-copy"><strong>{command.label}</strong><small>{command.description}</small></span>
-                  {slashMenu.selectedIndex === index && <kbd>↵</kbd>}
-                </button>)}
+                {filteredSlashCommands.map((command, index) => <span className="slash-command-group" key={command.id}>
+                  {(index === 0 || slashCommandCategory(filteredSlashCommands[index - 1].id) !== slashCommandCategory(command.id)) && <span className="slash-command-category">{slashCommandCategory(command.id)}</span>}
+                  <button type="button" role="option" aria-selected={slashMenu.selectedIndex === index} className={`slash-command-option ${slashMenu.selectedIndex === index ? "selected" : ""}`} onMouseDown={event => event.preventDefault()} onClick={() => executeSlashCommand(command.id)}>
+                    <span className="slash-command-glyph">{command.id === "heading1" ? "H1" : command.id === "heading2" ? "H2" : command.id === "heading3" ? "H3" : command.id === "bulletList" ? "•" : command.id === "orderedList" ? "1." : command.id === "taskList" ? "☑" : command.id === "table" ? "▦" : command.id === "image" ? "▧" : command.id === "link" ? "↗" : command.id === "quote" ? "“" : command.id === "codeBlock" ? "</>" : command.id === "divider" ? "—" : "T"}</span>
+                    <span className="slash-command-copy"><strong>{command.label}</strong><small>{command.description}</small></span>
+                    {slashMenu.selectedIndex === index && <kbd>↵</kbd>}
+                  </button>
+                </span>)}
               </div>}
               {slashMenu && filteredSlashCommands.length === 0 && <div className="slash-command-menu slash-command-empty" style={{ left: slashMenu.left, top: slashMenu.top }}>No matching commands</div>}
             </div>
