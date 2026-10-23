@@ -15,7 +15,7 @@ import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
 import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
-  PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal, GripVertical,
+  PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal, GripVertical, ArrowUp, ArrowDown,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
   Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, Link2, ExternalLink, Download, Upload, Code2
 } from "lucide-react";
@@ -300,6 +300,26 @@ function App() {
     } catch {
       setBlockControls(null);
     }
+  };
+
+  const moveEditorBlock = (direction: "up" | "down") => {
+    if (!editor || !blockControls) return;
+    const { pos } = blockControls;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node) return;
+    const adjacent = direction === "up"
+      ? editor.state.doc.resolve(pos).nodeBefore
+      : editor.state.doc.nodeAt(pos + node.nodeSize);
+    if (!adjacent) return;
+    const insertPos = direction === "up" ? pos - adjacent.nodeSize : pos + adjacent.nodeSize;
+    editor.chain().focus()
+      .deleteRange({ from: pos, to: pos + node.nodeSize })
+      .insertContentAt(insertPos, node.toJSON())
+      .setNodeSelection(insertPos)
+      .run();
+    setBlockMenuOpen(false);
+    setBlockControls(null);
+    setToast(direction === "up" ? "Block moved up" : "Block moved down");
   };
 
   const insertEditorBlockAbove = () => {
@@ -673,6 +693,9 @@ function App() {
 
   const filteredSlashCommands = slashMenu ? slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(slashMenu.query)) : [];
   const linkablePages = notes.filter((note) => !note.trashed && note.id !== activeNote?.id && (note.title || "Untitled").toLocaleLowerCase().includes(pageLinkQuery.trim().toLocaleLowerCase())).slice(0, 30);
+  const blockNode = editor && blockControls ? editor.state.doc.nodeAt(blockControls.pos) : null;
+  const canMoveBlockUp = !!(editor && blockControls && editor.state.doc.resolve(blockControls.pos).nodeBefore);
+  const canMoveBlockDown = !!(editor && blockControls && blockNode && editor.state.doc.nodeAt(blockControls.pos + blockNode.nodeSize));
   const pageBreadcrumbs = useMemo(() => {
     const path: Note[] = [];
     const seen = new Set<string>();
@@ -821,6 +844,9 @@ function App() {
                   setBlockMenuOpen(value => !value);
                 }}><GripVertical size={16}/></button>}
               {blockMenuOpen && blockControls && <div className="editor-block-menu" style={{ top: blockControls.top + 26 }} role="menu" aria-label="Block actions">
+                <button role="menuitem" disabled={!canMoveBlockUp} onPointerDown={(event) => event.preventDefault()} onClick={() => moveEditorBlock("up")}><ArrowUp size={14}/> Move up</button>
+                <button role="menuitem" disabled={!canMoveBlockDown} onPointerDown={(event) => event.preventDefault()} onClick={() => moveEditorBlock("down")}><ArrowDown size={14}/> Move down</button>
+                <span className="workspace-menu-divider"/>
                 <button role="menuitem" onPointerDown={(event) => event.preventDefault()} onClick={insertEditorBlockAbove}><Plus size={14}/> Add block above</button>
                 <button role="menuitem" onPointerDown={(event) => event.preventDefault()} onClick={duplicateEditorBlock}><Copy size={14}/> Duplicate block</button>
                 <button role="menuitem" onPointerDown={(event) => event.preventDefault()} onClick={deleteEditorBlock}><Trash2 size={14}/> Delete block</button>
