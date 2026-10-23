@@ -39,3 +39,7 @@
 
 
 .database-property-rename{width:calc(100% - 25px);min-width:90px;height:25px;padding:0 5px;border:1px solid var(--accent);border-radius:4px;background:var(--surface);color:var(--text);font:inherit;font-weight:650}.database-property-error-banner{margin:-3px 0 10px;font-weight:500}
+
+
+/* Embedded page images are content-width responsive and keyboard-selectable in the editor. */
+.tiptap img.page-image{display:block;max-width:100%;height:auto;max-height:72vh;object-fit:contain;border-radius:8px;margin:18px auto;cursor:default}.tiptap img.page-image.ProseMirror-selectednode{outline:2px solid var(--accent);outline-offset:3px}.tiptap p:has(>img.page-image){margin:18px 0}
