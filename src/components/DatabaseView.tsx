@@ -1,12 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy, Download,
-  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal, CalendarDays, ChevronLeft, ChevronRight
+  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal, CalendarDays, ChevronLeft, ChevronRight, Upload
 } from "lucide-react";
 import type {
   DatabaseCell, DatabaseProperty, DatabasePropertyType, DatabaseRow, WorkspaceDatabase
 } from "../lib/workspace";
-import { serializeDatabaseCsv } from "../lib/csv";
+import { importDatabaseCsv, serializeDatabaseCsv } from "../lib/csv";
 
 type DatabaseViewProps = {
   title: string;
@@ -20,6 +20,7 @@ type DatabaseViewProps = {
   onToggleFavorite: () => void;
   onDuplicate: () => void;
   onTrash: () => void;
+  onMessage: (message: string) => void;
 };
 
 type SortState = { propertyId: string; direction: "asc" | "desc" } | null;
@@ -58,9 +59,11 @@ export default function DatabaseView({
   onDatabaseChange,
   onToggleFavorite,
   onDuplicate,
-  onTrash
+  onTrash,
+  onMessage
 }: DatabaseViewProps) {
   const [filter, setFilter] = useState("");
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [sort, setSort] = useState<SortState>(null);
   const [addingProperty, setAddingProperty] = useState(false);
@@ -119,6 +122,22 @@ export default function DatabaseView({
     link.download = `${filename}.csv`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const importCsv = async (file?: File) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      onMessage("CSV files must be 5 MB or smaller.");
+      return;
+    }
+    try {
+      const updated = importDatabaseCsv(await file.text(), database);
+      const importedRows = updated.rows.length - database.rows.length;
+      onDatabaseChange(updated);
+      onMessage("CSV imported: " + importedRows + " " + (importedRows === 1 ? "row" : "rows") + " added.");
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : "Could not import this CSV file.");
+    }
   };
 
   const deleteRow = (rowId: string) => onDatabaseChange({
@@ -265,6 +284,8 @@ export default function DatabaseView({
         <label className="database-filter"><Search size={14} /><input value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter database entries" placeholder="Filter entries..." /></label>
         <button className="database-action-button" onClick={() => { setAddingProperty((value) => !value); setPropertyError(""); }}><SlidersHorizontal size={14} /> Property</button>
         <button className="database-action-button" onClick={exportCsv} title="Download CSV file"><Download size={14} /> Export CSV</button>
+        <button className="database-action-button" onClick={() => csvFileInputRef.current?.click()} title="Import a CSV file"><Upload size={14} /> Import CSV</button>
+        <input ref={csvFileInputRef} type="file" accept=".csv,text/csv" hidden onChange={(event) => { void importCsv(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
         <button className="database-action-button primary" onClick={addRow}><Plus size={14} /> New row</button>
       </div>
 
