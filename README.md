@@ -12,6 +12,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
 - **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties, rename properties by double-clicking their headers, filter and sort table views, and switch to a status-grouped board. Database cells are included in workspace search and JSON backups.
 - **Local persistence:** page content is stored in this browser's local storage. There is no account or cloud sync.
+- **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
 - **Search:** search page titles and editor text.
 - **Backups:** export all workspace data to JSON and import a validated backup.
@@ -44,7 +45,7 @@ npm run preview
 ## Data, privacy, and backups
 
 - Notes stay in the browser profile where they were created.
-- Clearing site data or using another browser/device can make local notes unavailable.
+- Clearing site data or using another browser/device can make local notes unavailable. Offline app-shell caching does not sync or back up note data by itself.
 - Export regular JSON backups using **Export backup**.
 - Import merges pages by ID; records with duplicate IDs, malformed fields, or cyclic parent/child relationships within one backup are rejected.
 - No synchronization or end-to-end encrypted cloud backup is implemented yet.
