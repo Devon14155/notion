@@ -698,11 +698,11 @@ function App() {
         <div className="workspace-switcher">
           <div className="workspace-mark" aria-hidden="true">N</div>
           <div className="workspace-meta"><strong>My workspace</strong><span>Personal space</span></div>
-          <button className="icon-button subtle" aria-label="Workspace options" onClick={() => setToast("Workspace settings are coming next")}><ChevronDown size={15}/></button>
+          <button className="icon-button subtle" aria-label="Workspace options" onClick={() => setSettingsOpen(true)}><ChevronDown size={15}/></button>
         </div>
         <div className="sidebar-actions">
           <button className="nav-item" onClick={() => { setSearchOpen(true); setTimeout(() => document.getElementById("global-search")?.focus(), 30); }}><Search size={16}/><span>Search</span><kbd>⌘ K</kbd></button>
-          <button className="nav-item" onClick={() => setToast("Inbox is ready for a future notification integration")}><Inbox size={16}/><span>Inbox</span></button>
+          <button className="nav-item" onClick={() => setToast("No new updates in this local workspace.")}><Inbox size={16}/><span>Inbox</span></button>
           <button className="nav-item" onClick={() => chooseSection("all")}><Home size={16}/><span>Home</span></button>
         </div>
         <div className="side-label">Favorites</div>
@@ -734,7 +734,6 @@ function App() {
             {pageBreadcrumbs.length ? pageBreadcrumbs.map((crumb, index) => <span className="breadcrumb-item" key={crumb.id}>{index > 0 && <ChevronRight size={13}/>} {index === pageBreadcrumbs.length - 1 ? <span className="crumb-current">{crumb.title || "Untitled"}</span> : <button className="breadcrumb-parent" onClick={() => { setActiveId(crumb.id); setSection("all"); }}>{crumb.title || "Untitled"}</button>}</span>) : <span className="crumb-current">{section === "trash" ? "Trash" : "Your pages"}</span>}
           </div>
           <div className="topbar-actions">
-            <button className="icon-button" aria-label="Toggle color theme" title={dark ? "Switch to light mode" : "Switch to dark mode"} onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>}</button>
             <button className="icon-button" aria-label="Search pages" title="Search" onClick={() => setSearchOpen(true)}><Search size={16}/></button>
             <button className={`icon-button topbar-favorite ${activeNote?.favorite ? "is-favorite" : ""}`} aria-label={activeNote?.favorite ? "Remove from favorites" : "Add to favorites"} title={activeNote?.favorite ? "Remove from favorites" : "Add to favorites"} disabled={!activeNote || section === "trash"} onClick={toggleFavorite}><Star size={16} fill={activeNote?.favorite ? "currentColor" : "none"}/></button>
             <div className="workspace-menu-wrap">
@@ -747,6 +746,7 @@ function App() {
                 <button role="menuitem" onClick={() => { exportNotes(); setWorkspaceMenuOpen(false); }}><Download size={14}/> Export workspace backup</button>
                 <button role="menuitem" onClick={() => { document.getElementById("import-file")?.click(); setWorkspaceMenuOpen(false); }}><Upload size={14}/> Import workspace backup</button>
                 <span className="workspace-menu-divider"/>
+                <button role="menuitem" onClick={() => { setDark(value => !value); setWorkspaceMenuOpen(false); }}>{dark ? <Sun size={14}/> : <Moon size={14}/>} Switch to {dark ? "light" : "dark"} mode</button>
                 <button role="menuitem" onClick={() => { setSettingsOpen(true); setWorkspaceMenuOpen(false); }}><Settings2 size={14}/> Settings</button>
               </div>}
             </div>
