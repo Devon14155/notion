@@ -62,6 +62,21 @@ describe("local workspace persistence fallback", () => {
     });
   });
 
+  it("keeps concurrent snapshots in invocation order", async () => {
+    const first = { ...sampleNotes[0], title: "First snapshot" };
+    const second = { ...sampleNotes[0], title: "Latest snapshot" };
+
+    await Promise.all([
+      savePersistedWorkspace([first]),
+      savePersistedWorkspace([second])
+    ]);
+
+    const saved = JSON.parse(records.get(STORAGE_KEY) ?? "null") as {
+      notes: WorkspaceNote[];
+    };
+    expect(saved.notes[0].title).toBe("Latest snapshot");
+  });
+
   it("saves a versioned fallback snapshot with a timestamp", async () => {
     await expect(savePersistedWorkspace(sampleNotes)).resolves.toBe("localStorage");
 
