@@ -693,9 +693,11 @@ function App() {
 
   const filteredSlashCommands = slashMenu ? slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(slashMenu.query)) : [];
   const linkablePages = notes.filter((note) => !note.trashed && note.id !== activeNote?.id && (note.title || "Untitled").toLocaleLowerCase().includes(pageLinkQuery.trim().toLocaleLowerCase())).slice(0, 30);
-  const blockNode = editor && blockControls ? editor.state.doc.nodeAt(blockControls.pos) : null;
-  const canMoveBlockUp = !!(editor && blockControls && editor.state.doc.resolve(blockControls.pos).nodeBefore);
-  const canMoveBlockDown = !!(editor && blockControls && blockNode && editor.state.doc.nodeAt(blockControls.pos + blockNode.nodeSize));
+  const blockPositionIsValid = !!(editor && blockControls && blockControls.pos >= 0 &&
+    blockControls.pos < editor.state.doc.content.size && editor.state.doc.nodeAt(blockControls.pos));
+  const blockNode = blockPositionIsValid && editor && blockControls ? editor.state.doc.nodeAt(blockControls.pos) : null;
+  const canMoveBlockUp = !!(blockPositionIsValid && editor && blockControls && editor.state.doc.resolve(blockControls.pos).nodeBefore);
+  const canMoveBlockDown = !!(blockPositionIsValid && editor && blockControls && blockNode && editor.state.doc.nodeAt(blockControls.pos + blockNode.nodeSize));
   const pageBreadcrumbs = useMemo(() => {
     const path: Note[] = [];
     const seen = new Set<string>();
@@ -835,7 +837,7 @@ function App() {
               onPointerDown={(event) => { if (event.pointerType === "touch") locateEditorBlock(event.target, event.currentTarget); }}
               onPointerLeave={() => { if (!blockMenuOpen) setBlockControls(null); }}
             >
-              {blockControls && <button type="button" className="editor-block-handle" style={{ top: blockControls.top }} aria-label="Open block actions" title="Block actions"
+              {blockControls && blockNode && <button type="button" className="editor-block-handle" style={{ top: blockControls.top }} aria-label="Open block actions" title="Block actions"
                 onPointerDown={(event) => event.preventDefault()}
                 onClick={() => {
                   if (!editor || !blockControls) return;
@@ -843,7 +845,7 @@ function App() {
                   setSelectionToolbar(null);
                   setBlockMenuOpen(value => !value);
                 }}><GripVertical size={16}/></button>}
-              {blockMenuOpen && blockControls && <div className="editor-block-menu" style={{ top: blockControls.top + 26 }} role="menu" aria-label="Block actions">
+              {blockMenuOpen && blockControls && blockNode && <div className="editor-block-menu" style={{ top: blockControls.top + 26 }} role="menu" aria-label="Block actions">
                 <button role="menuitem" disabled={!canMoveBlockUp} onPointerDown={(event) => event.preventDefault()} onClick={() => moveEditorBlock("up")}><ArrowUp size={14}/> Move up</button>
                 <button role="menuitem" disabled={!canMoveBlockDown} onPointerDown={(event) => event.preventDefault()} onClick={() => moveEditorBlock("down")}><ArrowDown size={14}/> Move down</button>
                 <span className="workspace-menu-divider"/>
