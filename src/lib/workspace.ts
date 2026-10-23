@@ -154,3 +154,30 @@ export function searchNotes<T extends Pick<WorkspaceNote, "title" | "content"> &
       databaseText.toLocaleLowerCase().includes(needle);
   });
 }
+
+/** Make an independent copy of a page, including its structured database payload. */
+export function duplicateWorkspaceNote(
+  note: WorkspaceNote,
+  newId: string,
+  updatedAt: number
+): WorkspaceNote {
+  return {
+    ...note,
+    id: newId,
+    title: `${note.title.trim() || "Untitled"} (copy)`,
+    updatedAt,
+    favorite: false,
+    trashed: false,
+    ...(note.database ? {
+      database: {
+        ...note.database,
+        properties: note.database.properties.map((property) => ({
+          ...property,
+          ...(property.options ? { options: [...property.options] } : {})
+        })),
+        rows: note.database.rows.map((row) => ({ ...row, cells: { ...row.cells } }))
+      }
+    } : {})
+  };
+}
+
