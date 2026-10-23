@@ -15,6 +15,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
 - **Search:** search page titles, editor text, and structured database cells; database results show a useful row preview.
+- **Portable exports:** export any page as a standalone HTML document, or export/import structured databases as CSV. Database HTML exports include a readable table; user content is escaped where rendered as table data.
 - **Backups:** export all workspace data to JSON and import a validated backup.
 - **Appearance:** light and dark themes, responsive sidebar, and mobile navigation.
 - **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
