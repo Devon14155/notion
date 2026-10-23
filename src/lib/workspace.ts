@@ -5,6 +5,7 @@ export type WorkspaceNote = {
   updatedAt: number;
   favorite: boolean;
   icon: string;
+  parentId?: string;
   trashed?: boolean;
 };
 
@@ -26,6 +27,7 @@ function isWorkspaceNote(value: unknown): value is WorkspaceNote {
     Number.isFinite(note.updatedAt) &&
     typeof note.favorite === "boolean" &&
     typeof note.icon === "string" &&
+    (note.parentId === undefined || (typeof note.parentId === "string" && note.parentId.length > 0)) &&
     (note.trashed === undefined || typeof note.trashed === "boolean");
 }
 
@@ -44,6 +46,18 @@ export function parseWorkspaceBackup(raw: string): WorkspaceNote[] {
   for (const note of candidate) {
     if (ids.has(note.id)) throw new Error("Invalid workspace backup: duplicate page IDs.");
     ids.add(note.id);
+  }
+  const byId = new Map(candidate.map((note) => [note.id, note]));
+  for (const note of candidate) {
+    const ancestry = new Set<string>();
+    let current: WorkspaceNote | undefined = note;
+    while (current) {
+      if (ancestry.has(current.id)) {
+        throw new Error("Invalid workspace backup: page hierarchy contains a cycle.");
+      }
+      ancestry.add(current.id);
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
   }
   return candidate;
 }
