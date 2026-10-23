@@ -56,6 +56,94 @@ describe("parseWorkspaceBackup", () => {
     expect(parseWorkspaceBackup(JSON.stringify({ schemaVersion: 1, notes: [calendarNote] }))).toEqual([calendarNote]);
   });
 
+  it("rejects duplicate database property names ignoring case and whitespace", () => {
+    const duplicateName: WorkspaceDatabase = {
+      ...database,
+      properties: [
+        ...database.properties,
+        { id: "alternate-name", name: "  name ", type: "text" }
+      ]
+    };
+    const malformed: WorkspaceNote = { ...notes[0], kind: "database", database: duplicateName };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
+  it("rejects duplicate select options ignoring case and whitespace", () => {
+    const duplicateOptions: WorkspaceDatabase = {
+      ...database,
+      properties: [
+        database.properties[0],
+        { id: "status", name: "Status", type: "status", options: ["Done", " done "] }
+      ]
+    };
+    const malformed: WorkspaceNote = { ...notes[0], kind: "database", database: duplicateOptions };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
+  it("rejects a string stored in a number property", () => {
+    const typedDatabase: WorkspaceDatabase = {
+      ...database,
+      properties: [...database.properties, { id: "count", name: "Count", type: "number" }],
+      rows: [{ ...database.rows[0], cells: { ...database.rows[0].cells, count: "five" } }]
+    };
+    const malformed: WorkspaceNote = { ...notes[0], kind: "database", database: typedDatabase };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
+  it("allows null numeric cells and validates primitive cell types", () => {
+    const typedDatabase: WorkspaceDatabase = {
+      ...database,
+      properties: [
+        ...database.properties,
+        { id: "count", name: "Count", type: "number" },
+        { id: "complete", name: "Complete", type: "checkbox" }
+      ],
+      rows: [{
+        ...database.rows[0],
+        cells: { ...database.rows[0].cells, count: null, complete: false }
+      }]
+    };
+    const valid: WorkspaceNote = { ...notes[0], kind: "database", database: typedDatabase };
+    expect(parseWorkspaceBackup(JSON.stringify({ notes: [valid] }))).toEqual([valid]);
+  });
+
+  it("rejects status values outside the configured options", () => {
+    const invalidStatus: WorkspaceDatabase = {
+      ...database,
+      rows: [{ ...database.rows[0], cells: { ...database.rows[0].cells, status: "Blocked" } }]
+    };
+    const malformed: WorkspaceNote = { ...notes[0], kind: "database", database: invalidStatus };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
+  it("rejects impossible ISO calendar dates", () => {
+    const invalidDate: WorkspaceDatabase = {
+      ...database,
+      properties: [...database.properties, { id: "due", name: "Due date", type: "date" }],
+      rows: [{ ...database.rows[0], cells: { ...database.rows[0].cells, due: "2026-02-30" } }]
+    };
+    const malformed: WorkspaceNote = { ...notes[0], kind: "database", database: invalidDate };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
+  it("accepts valid ISO calendar dates and blank dates", () => {
+    const validDate: WorkspaceDatabase = {
+      ...database,
+      properties: [...database.properties, { id: "due", name: "Due date", type: "date" }],
+      rows: [{ ...database.rows[0], cells: { ...database.rows[0].cells, due: "2026-10-23" } }]
+    };
+    const valid: WorkspaceNote = { ...notes[0], kind: "database", database: validDate };
+    expect(parseWorkspaceBackup(JSON.stringify({ notes: [valid] }))).toEqual([valid]);
+    const blankDate: WorkspaceNote = {
+      ...valid,
+      database: {
+        ...validDate,
+        rows: [{ ...validDate.rows[0], cells: { ...validDate.rows[0].cells, due: "" } }]
+      }
+    };
+    expect(parseWorkspaceBackup(JSON.stringify({ notes: [blankDate] }))).toEqual([blankDate]);
+  });
+
   it("rejects databases with no properties", () => {
     const malformed = { ...notes[0], kind: "database", database: { ...database, properties: [], rows: [] } };
     expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
