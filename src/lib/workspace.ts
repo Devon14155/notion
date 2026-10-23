@@ -62,7 +62,7 @@ function isDatabaseRow(value: unknown): value is DatabaseRow {
 function isWorkspaceDatabase(value: unknown): value is WorkspaceDatabase {
   if (!value || typeof value !== "object") return false;
   const database = value as Record<string, unknown>;
-  if (!Array.isArray(database.properties) || !database.properties.every(isDatabaseProperty) ||
+  if (!Array.isArray(database.properties) || database.properties.length === 0 || !database.properties.every(isDatabaseProperty) ||
       !Array.isArray(database.rows) || !database.rows.every(isDatabaseRow) ||
       (database.view !== "table" && database.view !== "board")) return false;
 
