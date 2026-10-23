@@ -1,0 +1,261 @@
+import { useMemo, useState } from "react";
+import {
+  Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X,
+  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal
+} from "lucide-react";
+import type {
+  DatabaseCell, DatabaseProperty, DatabasePropertyType, DatabaseRow, WorkspaceDatabase
+} from "../lib/workspace";
+
+type DatabaseViewProps = {
+  title: string;
+  icon: string;
+  favorite: boolean;
+  updatedAt: number;
+  database: WorkspaceDatabase;
+  onRename: (title: string) => void;
+  onDatabaseChange: (database: WorkspaceDatabase) => void;
+  onToggleFavorite: () => void;
+  onTrash: () => void;
+};
+
+type SortState = { propertyId: string; direction: "asc" | "desc" } | null;
+
+const defaultStatusOptions = ["Not started", "In progress", "Done"];
+
+function valueText(value: DatabaseCell | undefined): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  return String(value);
+}
+
+function initialCellValue(property: DatabaseProperty): DatabaseCell {
+  if (property.type === "checkbox") return false;
+  if (property.type === "number") return null;
+  if (property.type === "status" || property.type === "select") return property.options?.[0] ?? "";
+  return "";
+}
+
+function createRow(database: WorkspaceDatabase): DatabaseRow {
+  return {
+    id: crypto.randomUUID(),
+    cells: Object.fromEntries(database.properties.map((property) => [property.id, initialCellValue(property)]))
+  };
+}
+
+export default function DatabaseView({
+  title,
+  icon,
+  favorite,
+  updatedAt,
+  database,
+  onRename,
+  onDatabaseChange,
+  onToggleFavorite,
+  onTrash
+}: DatabaseViewProps) {
+  const [filter, setFilter] = useState("");
+  const [sort, setSort] = useState<SortState>(null);
+  const [addingProperty, setAddingProperty] = useState(false);
+  const [newPropertyName, setNewPropertyName] = useState("");
+  const [newPropertyType, setNewPropertyType] = useState<DatabasePropertyType>("text");
+  const [propertyError, setPropertyError] = useState("");
+
+  const titleProperty = database.properties[0];
+  const statusProperty = database.properties.find((property) => property.type === "status" || property.type === "select");
+  const statusOptions = statusProperty?.options?.length
+    ? statusProperty.options
+    : statusProperty?.type === "status" ? defaultStatusOptions : [];
+  const filteredRows = useMemo(() => {
+    const needle = filter.trim().toLocaleLowerCase();
+    const result = database.rows.filter((row) => !needle || database.properties.some((property) =>
+      valueText(row.cells[property.id]).toLocaleLowerCase().includes(needle)
+    ));
+    if (!sort) return result;
+    const direction = sort.direction === "asc" ? 1 : -1;
+    return [...result].sort((left, right) => {
+      const a = left.cells[sort.propertyId];
+      const b = right.cells[sort.propertyId];
+      if (typeof a === "number" && typeof b === "number") return (a - b) * direction;
+      return valueText(a).localeCompare(valueText(b), undefined, { numeric: true, sensitivity: "base" }) * direction;
+    });
+  }, [database.rows, database.properties, filter, sort]);
+
+  const updateCell = (rowId: string, propertyId: string, value: DatabaseCell) => {
+    onDatabaseChange({
+      ...database,
+      rows: database.rows.map((row) => row.id === rowId
+        ? { ...row, cells: { ...row.cells, [propertyId]: value } }
+        : row)
+    });
+  };
+
+  const addRow = () => onDatabaseChange({ ...database, rows: [...database.rows, createRow(database)] });
+
+  const deleteRow = (rowId: string) => onDatabaseChange({
+    ...database,
+    rows: database.rows.filter((row) => row.id !== rowId)
+  });
+
+  const addProperty = () => {
+    const name = newPropertyName.trim();
+    if (!name) {
+      setPropertyError("Enter a property name.");
+      return;
+    }
+    if (database.properties.some((property) => property.name.toLocaleLowerCase() === name.toLocaleLowerCase())) {
+      setPropertyError("A property with that name already exists.");
+      return;
+    }
+    const property: DatabaseProperty = {
+      id: crypto.randomUUID(),
+      name,
+      type: newPropertyType,
+      ...((newPropertyType === "status" || newPropertyType === "select")
+        ? { options: newPropertyType === "status" ? defaultStatusOptions : ["Option 1", "Option 2"] }
+        : {})
+    };
+    onDatabaseChange({
+      ...database,
+      properties: [...database.properties, property],
+      rows: database.rows.map((row) => ({ ...row, cells: { ...row.cells, [property.id]: initialCellValue(property) } }))
+    });
+    setNewPropertyName("");
+    setNewPropertyType("text");
+    setPropertyError("");
+    setAddingProperty(false);
+  };
+
+  const deleteProperty = (propertyId: string) => {
+    if (database.properties.length <= 1) return;
+    onDatabaseChange({
+      ...database,
+      properties: database.properties.filter((property) => property.id !== propertyId),
+      rows: database.rows.map((row) => {
+        const cells = { ...row.cells };
+        delete cells[propertyId];
+        return { ...row, cells };
+      })
+    });
+    if (sort?.propertyId === propertyId) setSort(null);
+  };
+
+  const changeView = (view: WorkspaceDatabase["view"]) => onDatabaseChange({ ...database, view });
+
+  const toggleSort = (propertyId: string) => {
+    setSort((current) => current?.propertyId === propertyId
+      ? { propertyId, direction: current.direction === "asc" ? "desc" : "asc" }
+      : { propertyId, direction: "asc" });
+  };
+
+  const renderCell = (row: DatabaseRow, property: DatabaseProperty) => {
+    const value = row.cells[property.id];
+    const label = `${property.name} for ${valueText(row.cells[titleProperty?.id ?? ""]) || "untitled row"}`;
+    if (property.type === "checkbox") {
+      return <input className="database-checkbox" type="checkbox" checked={value === true} onChange={(event) => updateCell(row.id, property.id, event.target.checked)} aria-label={label} />;
+    }
+    if (property.type === "status" || property.type === "select") {
+      const options = property.options?.length ? property.options : property.type === "status" ? defaultStatusOptions : [];
+      return <select className="database-cell-input" value={valueText(value)} onChange={(event) => updateCell(row.id, property.id, event.target.value)} aria-label={label}>
+        <option value="">Not set</option>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>;
+    }
+    if (property.type === "date") {
+      return <input className="database-cell-input" type="date" value={valueText(value)} onChange={(event) => updateCell(row.id, property.id, event.target.value)} aria-label={label} />;
+    }
+    if (property.type === "number") {
+      return <input className="database-cell-input" type="number" value={typeof value === "number" ? value : ""} onChange={(event) => updateCell(row.id, property.id, event.target.value === "" ? null : Number(event.target.value))} aria-label={label} />;
+    }
+    return <input className={`database-cell-input ${property === titleProperty ? "database-title-cell" : ""}`} type="text" value={valueText(value)} onChange={(event) => updateCell(row.id, property.id, event.target.value)} aria-label={label} placeholder={property === titleProperty ? "Untitled" : "Empty"} />;
+  };
+
+  const statusValue = (row: DatabaseRow) => valueText(statusProperty ? row.cells[statusProperty.id] : undefined);
+  const boardGroups = statusProperty ? [...statusOptions, "__no_status__"] : [];
+
+  return (
+    <article className="document database-document">
+      <div className="page-actions-row">
+        <div className="page-icon-large">{icon || "🗃️"}</div>
+        <div className="page-actions">
+          <span className="saved-label"><span className="status-dot" /> Saved locally</span>
+          <button className={`icon-button ${favorite ? "is-favorite" : ""}`} onClick={onToggleFavorite} aria-label={favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={favorite ? "currentColor" : "none"} /></button>
+          <button className="icon-button" onClick={onTrash} aria-label="Move database to trash"><Trash2 size={16} /></button>
+        </div>
+      </div>
+      <input className="document-title" value={title} onChange={(event) => onRename(event.target.value)} aria-label="Database page title" placeholder="Untitled database" />
+      <div className="document-meta">
+        <span><Clock3 size={12} /> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(updatedAt)}</span>
+        <span className="meta-divider">·</span><span>{database.rows.length} {database.rows.length === 1 ? "entry" : "entries"} · Local database</span>
+      </div>
+
+      <div className="database-toolbar">
+        <div className="database-view-switch" role="group" aria-label="Database view">
+          <button className={database.view === "table" ? "active" : ""} aria-pressed={database.view === "table"} onClick={() => changeView("table")}><Table2 size={14} /> Table</button>
+          <button className={database.view === "board" ? "active" : ""} aria-pressed={database.view === "board"} onClick={() => changeView("board")}><LayoutGrid size={14} /> Board</button>
+        </div>
+        <label className="database-filter"><Search size={14} /><input value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter database entries" placeholder="Filter entries..." /></label>
+        <button className="database-action-button" onClick={() => { setAddingProperty((value) => !value); setPropertyError(""); }}><SlidersHorizontal size={14} /> Property</button>
+        <button className="database-action-button primary" onClick={addRow}><Plus size={14} /> New row</button>
+      </div>
+
+      {addingProperty && <form className="database-property-form" onSubmit={(event) => { event.preventDefault(); addProperty(); }}>
+        <label>Property name<input autoFocus value={newPropertyName} onChange={(event) => { setNewPropertyName(event.target.value); setPropertyError(""); }} placeholder="e.g. Priority" /></label>
+        <label>Type<select value={newPropertyType} onChange={(event) => setNewPropertyType(event.target.value as DatabasePropertyType)}>
+          <option value="text">Text</option><option value="status">Status</option><option value="select">Select</option><option value="date">Date</option><option value="number">Number</option><option value="checkbox">Checkbox</option>
+        </select></label>
+        <button type="submit" className="database-action-button primary">Add property</button>
+        <button type="button" className="database-action-button" onClick={() => { setAddingProperty(false); setPropertyError(""); }}>Cancel</button>
+        {propertyError && <span className="database-property-error" role="alert">{propertyError}</span>}
+      </form>}
+
+      {database.view === "table" ? <div className="database-table-wrap">
+        <table className="database-table">
+          <thead><tr>
+            {database.properties.map((property) => <th key={property.id}>
+              <button className="database-sort-button" onClick={() => toggleSort(property.id)} aria-label={`Sort by ${property.name}`}>
+                <span>{property.name}</span>
+                {sort?.propertyId === property.id ? (sort.direction === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />) : <ArrowDownUp size={11} />}
+              </button>
+              <button className="database-delete-property" disabled={database.properties.length <= 1} onClick={() => deleteProperty(property.id)} aria-label={`Delete ${property.name} property`} title="Delete property"><X size={12} /></button>
+            </th>)}
+            <th className="database-row-actions-heading" aria-label="Row actions" />
+          </tr></thead>
+          <tbody>
+            {filteredRows.map((row) => <tr key={row.id}>
+              {database.properties.map((property) => <td key={property.id}>{renderCell(row, property)}</td>)}
+              <td className="database-row-actions"><button onClick={() => deleteRow(row.id)} aria-label="Delete row" title="Delete row"><Trash2 size={13} /></button></td>
+            </tr>)}
+            {filteredRows.length === 0 && <tr><td className="database-empty-cell" colSpan={database.properties.length + 1}>{filter ? "No entries match this filter." : "No entries yet. Create a row to get started."}</td></tr>}
+          </tbody>
+        </table>
+      </div> : <div className="database-board">
+        {!statusProperty ? <div className="database-board-empty"><div className="database-empty-symbol">▦</div><strong>Board view needs a Status or Select property</strong><span>Add a property to group entries into columns.</span><button className="database-action-button primary" onClick={() => { setAddingProperty(true); setNewPropertyType("status"); setPropertyError(""); }}>Add status property</button></div> :
+          boardGroups.map((group) => {
+            const groupRows = filteredRows.filter((row) => group === "__no_status__" ? !statusValue(row) : statusValue(row) === group);
+            return <section className="database-board-column" key={group}>
+              <header><span className="database-board-dot" /> <strong>{group === "__no_status__" ? "No status" : group}</strong><span className="database-board-count">{groupRows.length}</span></header>
+              <div className="database-board-cards">
+                {groupRows.map((row) => <article className="database-board-card" key={row.id}>
+                  <strong>{valueText(row.cells[titleProperty?.id ?? ""]) || "Untitled entry"}</strong>
+                  {database.properties.filter((property) => property.id !== titleProperty?.id && property.id !== statusProperty.id && valueText(row.cells[property.id])).slice(0, 3).map((property) => <span className="database-board-detail" key={property.id}>{property.name}: {valueText(row.cells[property.id])}</span>)}
+                  <div className="database-board-card-actions">
+                    <select value={statusValue(row)} onChange={(event) => updateCell(row.id, statusProperty.id, event.target.value)} aria-label={`Status for ${valueText(row.cells[titleProperty?.id ?? ""]) || "untitled entry"}`}>
+                      <option value="">No status</option>{statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                    <button onClick={() => deleteRow(row.id)} aria-label="Delete entry"><Trash2 size={13} /></button>
+                  </div>
+                </article>)}
+                <button className="database-board-add" onClick={() => {
+                  const row = createRow(database);
+                  row.cells[statusProperty.id] = group === "__no_status__" ? "" : group;
+                  onDatabaseChange({ ...database, rows: [...database.rows, row] });
+                }}><Plus size={13} /> Add entry</button>
+              </div>
+            </section>;
+          })}
+      </div>}
+      <div className="database-footer"><span>{filteredRows.length} of {database.rows.length} entries</span><span>Edits save automatically on this device</span></div>
+    </article>
+  );
+}
