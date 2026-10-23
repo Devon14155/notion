@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy,
-  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal
+  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal, CalendarDays, ChevronLeft, ChevronRight
 } from "lucide-react";
 import type {
   DatabaseCell, DatabaseProperty, DatabasePropertyType, DatabaseRow, WorkspaceDatabase
@@ -68,8 +68,17 @@ export default function DatabaseView({
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
   const [editingPropertyName, setEditingPropertyName] = useState("");
   const [propertyError, setPropertyError] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1); });
 
   const titleProperty = database.properties[0];
+  const dateProperty = database.properties.find((property) => property.type === "date");
+  const calendarDays = useMemo(() => {
+    const first = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    const offset = (first.getDay() + 6) % 7;
+    const start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
+    return Array.from({ length: 42 }, (_, index) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + index));
+  }, [calendarMonth]);
+  const formatDateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   const statusProperty = database.properties.find((property) => property.type === "status" || property.type === "select");
   const statusOptions = statusProperty?.options?.length
     ? statusProperty.options
@@ -174,6 +183,19 @@ export default function DatabaseView({
 
   const changeView = (view: WorkspaceDatabase["view"]) => onDatabaseChange({ ...database, view });
 
+  const addEntryForDate = (date: Date) => {
+    if (!dateProperty) {
+      setAddingProperty(true);
+      setNewPropertyType("date");
+      setNewPropertyName("Date");
+      setPropertyError("");
+      return;
+    }
+    const row = createRow(database);
+    row.cells[dateProperty.id] = formatDateKey(date);
+    onDatabaseChange({ ...database, rows: [...database.rows, row] });
+  };
+
   const toggleSort = (propertyId: string) => {
     setSort((current) => current?.propertyId === propertyId
       ? { propertyId, direction: current.direction === "asc" ? "desc" : "asc" }
@@ -226,6 +248,7 @@ export default function DatabaseView({
         <div className="database-view-switch" role="group" aria-label="Database view">
           <button className={database.view === "table" ? "active" : ""} aria-pressed={database.view === "table"} onClick={() => changeView("table")}><Table2 size={14} /> Table</button>
           <button className={database.view === "board" ? "active" : ""} aria-pressed={database.view === "board"} onClick={() => changeView("board")}><LayoutGrid size={14} /> Board</button>
+          <button className={database.view === "calendar" ? "active" : ""} aria-pressed={database.view === "calendar"} onClick={() => changeView("calendar")}><CalendarDays size={14} /> Calendar</button>
         </div>
         <label className="database-filter"><Search size={14} /><input value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter database entries" placeholder="Filter entries..." /></label>
         <button className="database-action-button" onClick={() => { setAddingProperty((value) => !value); setPropertyError(""); }}><SlidersHorizontal size={14} /> Property</button>
@@ -275,7 +298,7 @@ export default function DatabaseView({
             {filteredRows.length === 0 && <tr><td className="database-empty-cell" colSpan={database.properties.length + 1}>{filter ? "No entries match this filter." : "No entries yet. Create a row to get started."}</td></tr>}
           </tbody>
         </table>
-      </div> : <div className="database-board">
+      </div> : database.view === "board" ? <div className="database-board">
         {!statusProperty ? <div className="database-board-empty"><div className="database-empty-symbol">▦</div><strong>Board view needs a Status or Select property</strong><span>Add a property to group entries into columns.</span><button className="database-action-button primary" onClick={() => { setAddingProperty(true); setNewPropertyType("status"); setPropertyError(""); }}>Add status property</button></div> :
           boardGroups.map((group) => {
             const groupRows = filteredRows.filter((row) => group === "__no_status__" ? !statusValue(row) : statusValue(row) === group);
@@ -300,6 +323,34 @@ export default function DatabaseView({
               </div>
             </section>;
           })}
+      </div> : <div className="database-calendar">
+        <div className="database-calendar-toolbar">
+          <strong>{new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(calendarMonth)}</strong>
+          <div>
+            <button className="database-action-button" aria-label="Previous month" title="Previous month" onClick={() => setCalendarMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft size={14} /></button>
+            <button className="database-action-button" onClick={() => { const now = new Date(); setCalendarMonth(new Date(now.getFullYear(), now.getMonth(), 1)); }}>Today</button>
+            <button className="database-action-button" aria-label="Next month" title="Next month" onClick={() => setCalendarMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight size={14} /></button>
+          </div>
+        </div>
+        {!dateProperty ? <div className="database-board-empty"><div className="database-empty-symbol"><CalendarDays size={25} /></div><strong>Calendar view needs a Date property</strong><span>Add a date property to place entries on the calendar.</span><button className="database-action-button primary" onClick={() => { setAddingProperty(true); setNewPropertyType("date"); setNewPropertyName("Date"); setPropertyError(""); }}>Add date property</button></div> :
+          <div className="database-calendar-scroll">
+            <div className="database-calendar-grid">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <div className="database-calendar-weekday" key={day}>{day}</div>)}
+              {calendarDays.map((day) => {
+                const key = formatDateKey(day);
+                const entries = filteredRows.filter((row) => valueText(row.cells[dateProperty.id]) === key);
+                const inMonth = day.getMonth() === calendarMonth.getMonth();
+                const isToday = key === formatDateKey(new Date());
+                return <div className={`database-calendar-day ${inMonth ? "" : "outside-month"} ${isToday ? "today" : ""}`} key={key}>
+                  <div className="database-calendar-day-heading"><span>{day.getDate()}</span><button onClick={() => addEntryForDate(day)} aria-label={`Add entry on ${key}`} title="Add entry"><Plus size={13} /></button></div>
+                  <div className="database-calendar-entries">
+                    {entries.slice(0, 3).map((row) => <button className="database-calendar-entry" key={row.id} title={valueText(row.cells[titleProperty?.id ?? ""]) || "Untitled entry"} onClick={() => changeView("table")}>{valueText(row.cells[titleProperty?.id ?? ""]) || "Untitled entry"}</button>)}
+                    {entries.length > 3 && <span className="database-calendar-more">+{entries.length - 3} more</span>}
+                  </div>
+                </div>;
+              })}
+            </div>
+          </div>}
       </div>}
       <div className="database-footer"><span>{filteredRows.length} of {database.rows.length} entries</span><span>Edits save automatically on this device</span></div>
     </article>
