@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWorkspaceBackup, searchNotes, type WorkspaceDatabase, type WorkspaceNote } from "./workspace";
+import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase, type WorkspaceNote } from "./workspace";
 
 const notes: WorkspaceNote[] = [
   { id: "one", title: "Meeting notes", content: "<p>Discuss the launch plan</p>", updatedAt: 10, favorite: true, icon: "📝" },
@@ -62,6 +62,42 @@ describe("parseWorkspaceBackup", () => {
 
   it("rejects invalid JSON", () => {
     expect(() => parseWorkspaceBackup("{")).toThrow();
+  });
+});
+
+describe("duplicateWorkspaceNote", () => {
+  it("creates a new page identity and clears favorite and trash state", () => {
+    const original: WorkspaceNote = { ...notes[0], favorite: true, trashed: true, parentId: "parent" };
+    const copy = duplicateWorkspaceNote(original, "copy-id", 99);
+    expect(copy).toMatchObject({
+      id: "copy-id",
+      title: "Meeting notes (copy)",
+      updatedAt: 99,
+      favorite: false,
+      trashed: false,
+      parentId: "parent"
+    });
+    expect(original.id).toBe("one");
+    expect(original.favorite).toBe(true);
+  });
+
+  it("deep-copies a database so editing rows and options does not mutate the source", () => {
+    const original: WorkspaceNote = { ...notes[0], kind: "database", database };
+    const copy = duplicateWorkspaceNote(original, "copy-db", 100);
+    expect(copy.database).toEqual(database);
+    expect(copy.database).not.toBe(original.database);
+    expect(copy.database?.properties[1].options).not.toBe(original.database?.properties[1].options);
+    expect(copy.database?.rows[0].cells).not.toBe(original.database?.rows[0].cells);
+    if (copy.database) {
+      copy.database.rows[0].cells.title = "Changed";
+      copy.database.properties[1].options?.push("Later");
+    }
+    expect(original.database?.rows[0].cells.title).toBe("Review draft");
+    expect(original.database?.properties[1].options).toEqual(["Not started", "Done"]);
+  });
+
+  it("uses Untitled when the source title is blank", () => {
+    expect(duplicateWorkspaceNote({ ...notes[0], title: " " }, "copy", 1).title).toBe("Untitled (copy)");
   });
 });
 
