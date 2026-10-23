@@ -178,10 +178,14 @@ describe("mergeWorkspaceNotes", () => {
   });
 
   it("does not mutate the existing workspace when validation fails", () => {
-    const existing = notes.map((note) => ({ ...note }));
+    const existing: WorkspaceNote[] = [
+      { ...notes[0] },
+      { ...notes[1], parentId: "one" }
+    ];
+    const before = existing.map((note) => ({ ...note }));
     const partialBackup = [{ ...notes[0], parentId: "two" }];
-    expect(() => mergeWorkspaceNotes(existing, partialBackup)).toThrow();
-    expect(existing).toEqual(notes);
+    expect(() => mergeWorkspaceNotes(existing, partialBackup)).toThrow(/hierarchy contains a cycle/);
+    expect(existing).toEqual(before);
   });
 });
 
