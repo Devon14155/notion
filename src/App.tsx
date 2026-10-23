@@ -2,13 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import TaskItem from "@tiptap/extension-task-item";
-import TaskList from "@tiptap/extension-task-list";
-import Table from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
-import TableHeader from "@tiptap/extension-table-header";
-import TableCell from "@tiptap/extension-table-cell";
+import { Placeholder } from "@tiptap/extensions";
+import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
 import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
@@ -161,6 +157,7 @@ function App() {
   };
 
   const editor = useEditor({
+    shouldRerenderOnTransaction: true,
     extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Table.configure({ resizable: true }), TableRow, TableHeader, TableCell, Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
     content: activeNote?.content ?? "",
     onUpdate: ({ editor: current }) => {
