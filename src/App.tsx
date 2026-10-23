@@ -287,7 +287,7 @@ function App() {
       case "orderedList": chain.toggleOrderedList().run(); break;
       case "taskList": chain.toggleTaskList().run(); break;
       case "table": chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
-      case "image": insertImageFromUrl(); break;
+      case "image": chain.run(); insertImageFromUrl(); break;
       case "quote": chain.toggleBlockquote().run(); break;
       case "codeBlock": chain.setCodeBlock().run(); break;
       case "divider": chain.setHorizontalRule().run(); break;
