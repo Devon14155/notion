@@ -9,7 +9,7 @@ import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
-import { parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
+import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
 import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
 import {
@@ -247,24 +247,7 @@ function App() {
 
   const duplicateActive = () => {
     if (!activeNote) return;
-    const duplicate: Note = {
-      ...activeNote,
-      id: crypto.randomUUID(),
-      title: `${activeNote.title.trim() || "Untitled"} (copy)`,
-      updatedAt: Date.now(),
-      favorite: false,
-      trashed: false,
-      ...(activeNote.database ? {
-        database: {
-          ...activeNote.database,
-          properties: activeNote.database.properties.map((property) => ({
-            ...property,
-            ...(property.options ? { options: [...property.options] } : {})
-          })),
-          rows: activeNote.database.rows.map((row) => ({ ...row, cells: { ...row.cells } }))
-        }
-      } : {})
-    };
+    const duplicate = duplicateWorkspaceNote(activeNote, crypto.randomUUID(), Date.now()) as Note;
     setNotes((prev) => [duplicate, ...prev]);
     setActiveId(duplicate.id);
     setSection("all");
