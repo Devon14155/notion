@@ -267,3 +267,8 @@ body, button, input, select, textarea { font-family: ui-sans-serif, -apple-syste
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Keep the desktop collapse control working after the sidebar width refresh. */
+@media (min-width: 701px) {
+  .sidebar.sidebar-collapsed { width: 0; flex-basis: 0; padding-left: 0; padding-right: 0; border: 0; }
+}
