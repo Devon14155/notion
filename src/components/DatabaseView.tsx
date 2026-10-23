@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import {
-  Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy,
+  Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy, Download,
   ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal, CalendarDays, ChevronLeft, ChevronRight
 } from "lucide-react";
 import type {
   DatabaseCell, DatabaseProperty, DatabasePropertyType, DatabaseRow, WorkspaceDatabase
 } from "../lib/workspace";
+import { serializeDatabaseCsv } from "../lib/csv";
 
 type DatabaseViewProps = {
   title: string;
@@ -108,6 +109,17 @@ export default function DatabaseView({
   };
 
   const addRow = () => onDatabaseChange({ ...database, rows: [...database.rows, createRow(database)] });
+
+  const exportCsv = () => {
+    const blob = new Blob(["\\uFEFF", serializeDatabaseCsv(database)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = title.trim().replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64) || "database";
+    link.href = url;
+    link.download = `${filename}.csv`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   const deleteRow = (rowId: string) => onDatabaseChange({
     ...database,
@@ -252,6 +264,7 @@ export default function DatabaseView({
         </div>
         <label className="database-filter"><Search size={14} /><input value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter database entries" placeholder="Filter entries..." /></label>
         <button className="database-action-button" onClick={() => { setAddingProperty((value) => !value); setPropertyError(""); }}><SlidersHorizontal size={14} /> Property</button>
+        <button className="database-action-button" onClick={exportCsv} title="Download CSV file"><Download size={14} /> Export CSV</button>
         <button className="database-action-button primary" onClick={addRow}><Plus size={14} /> New row</button>
       </div>
 
