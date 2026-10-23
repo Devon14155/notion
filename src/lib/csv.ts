@@ -10,6 +10,11 @@ function escapeCsvCell(value: DatabaseCell | undefined): string {
  * Serialize a structured database as RFC 4180-style CSV.
  * Columns follow the database's property order; missing and null values become empty fields.
  */
+export function databaseCsvFileContent(database: WorkspaceDatabase): string {
+  return "\uFEFF" + serializeDatabaseCsv(database);
+}
+
+/** Serialize structured rows as CSV text, without a file-specific byte-order mark. */
 export function serializeDatabaseCsv(database: WorkspaceDatabase): string {
   const records: Array<Array<string | number | boolean | null | undefined>> = [
     database.properties.map((property) => property.name),
