@@ -13,7 +13,7 @@ describe("serializeDatabaseCsv", () => {
     const download = databaseCsvFileContent(fixture);
     expect(raw.charCodeAt(0)).not.toBe(0xfeff);
     expect(download.charCodeAt(0)).toBe(0xfeff);
-    expect(download).toContain("Name,");
+    expect(download).toContain("Name\r\n");
   });
 
   it("exports properties in their existing order and serializes typed cell values", () => {
