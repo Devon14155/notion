@@ -2,11 +2,11 @@
 
 A clean, responsive workspace for notes and ideas. The core application is designed to run locally in the browser without a paid API or a required application server.
 
-> **Status:** active early implementation. The app includes rich-text editing, nested pages, slash commands, browser-local persistence, search, favorites, recently edited pages, trash, JSON backup import/export, themes, keyboard shortcuts, and automated CI. It is not yet a production-ready Notion replacement.
+> **Status:** active early implementation. The app includes rich-text editing, nested pages, internal page links, slash commands, browser-local persistence, installable offline use, search, favorites, recently edited pages, trash, JSON backup import/export, themes, keyboard shortcuts, and automated CI. It is not yet a production-ready Notion replacement.
 
 ## Features
 
-- **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
+- **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
@@ -14,7 +14,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Local persistence:** IndexedDB is the primary on-device store, with a one-time migration from legacy localStorage and a fallback for restricted browsers. Writes are debounced to keep editing responsive. There is no account or cloud sync.
 - **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
-- **Search:** search page titles and editor text.
+- **Search:** search page titles, editor text, and structured database cells; database results show a useful row preview.
 - **Backups:** export all workspace data to JSON and import a validated backup.
 - **Appearance:** light and dark themes, responsive sidebar, and mobile navigation.
 - **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
