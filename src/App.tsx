@@ -15,7 +15,7 @@ import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink, Download, Upload
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink, Download, Upload, Undo2, Redo2
 } from "lucide-react";
 
 type Note = {
@@ -678,6 +678,9 @@ function App() {
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
             {section === "trash" && <div className="trash-banner"><Trash2 size={16}/> This page is in the trash. <button onClick={() => restoreNote(activeNote.id)}>Restore page</button><button className="permanent-delete" onClick={() => permanentlyDelete(activeNote.id)}>Delete permanently</button></div>}
             <div className="editor-toolbar" role="toolbar" aria-label="Text formatting">
+              <button type="button" className="editor-history-button" disabled={!editor?.can().chain().focus().undo().run()} onClick={() => editor?.chain().focus().undo().run()} aria-label="Undo" title="Undo (Ctrl/⌘ Z)"><Undo2 size={15}/></button>
+              <button type="button" className="editor-history-button" disabled={!editor?.can().chain().focus().redo().run()} onClick={() => editor?.chain().focus().redo().run()} aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)"><Redo2 size={15}/></button>
+              <span className="toolbar-separator"/>
               <button className={editor?.isActive("bold") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBold().run()} aria-label="Bold"><Bold size={15}/></button>
               <button className={editor?.isActive("italic") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleItalic().run()} aria-label="Italic"><Italic size={15}/></button>
               <span className="toolbar-separator"/>
