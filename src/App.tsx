@@ -46,6 +46,8 @@ type SlashMenuState = {
   selectedIndex: number;
 };
 
+const pageIcons = ["📄", "✳️", "📝", "💡", "📚", "✅", "🎯", "🗓️", "💼", "🧠", "⭐", "🚀", "🌱", "🎨", "🔬", "💻", "📌", "❤️", "📈", "🧪", "🏠", "🎓", "🛠️", "🌍"];
+
 const STORAGE_KEY = "notion-workspace-notes-v1";
 const starterNotes: Note[] = [
   { id: "welcome", title: "Welcome to your workspace", content: "<h2>A calmer place to think.</h2><p>This is your personal workspace. Create pages, capture ideas, and organize your work — with your content saved locally in this browser.</p><h2>Make it yours</h2><ul><li>Rename this page by editing its title.</li><li>Use the toolbar to format text.</li><li>Create a page from the sidebar with the <strong>New page</strong> button.</li><li>Star important pages to find them quickly.</li></ul><blockquote><p>Your workspace should work for you, not the other way around.</p></blockquote>", updatedAt: Date.now(), favorite: true, icon: "✳️" },
@@ -76,6 +78,7 @@ function App() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [slashMenu, setSlashMenu] = useState<SlashMenuState | null>(null);
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const slashMenuRef = useRef<SlashMenuState | null>(null);
   const editorAreaRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState("");
@@ -198,6 +201,7 @@ function App() {
   useEffect(() => {
     slashMenuRef.current = null;
     setSlashMenu(null);
+    setIconPickerOpen(false);
     if (editor && activeNote) {
       const current = editor.getHTML();
       if (current !== activeNote.content) editor.commands.setContent(activeNote.content || "");
@@ -247,6 +251,14 @@ function App() {
   const renameActive = (title: string) => {
     if (!activeNote) return;
     setNotes((prev) => prev.map((n) => n.id === activeNote.id ? { ...n, title, updatedAt: Date.now() } : n));
+  };
+
+  const choosePageIcon = (icon: string) => {
+    if (!activeNote) return;
+    const id = activeNote.id;
+    setNotes((prev) => prev.map((n) => n.id === id ? { ...n, icon, updatedAt: Date.now() } : n));
+    setIconPickerOpen(false);
+    setToast("Page icon updated");
   };
 
   const toggleFavorite = () => {
@@ -361,7 +373,7 @@ function App() {
 
         <div className="page-scroll">
           {activeNote ? <article className="document">
-            <div className="page-actions-row"><div className="page-icon-large">{activeNote.icon || "📄"}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> Saved locally</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button><button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
+            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> Saved locally</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button><button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
             <input className="document-title" value={activeNote.title} onChange={e => renameActive(e.target.value)} aria-label="Page title" placeholder="Untitled"/>
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
             {section === "trash" && <div className="trash-banner"><Trash2 size={16}/> This page is in the trash. <button onClick={() => restoreNote(activeNote.id)}>Restore page</button><button className="permanent-delete" onClick={() => permanentlyDelete(activeNote.id)}>Delete permanently</button></div>}
