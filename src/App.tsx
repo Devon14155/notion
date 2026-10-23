@@ -73,7 +73,7 @@ function notePreview(note: Note): string {
     }).filter(Boolean).join(" · ")).filter(Boolean).join(" — ");
     return preview.slice(0, 85) || "Structured database";
   }
-  return note.content.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim().slice(0, 85);
+  return plainTextPreview(note.content);
 }
 
 function loadNotes(): Note[] {
@@ -413,7 +413,7 @@ function App() {
       }
       editor.chain().focus().insertContent({
         type: "image",
-        attrs: { src: reader.result, alt: file.name.replace(/\\.[^.]+$/, "").slice(0, 120) }
+        attrs: { src: reader.result, alt: imageAltFromFilename(file.name) }
       }).run();
       setToast("Image inserted and saved locally");
     };
