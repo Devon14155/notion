@@ -15,11 +15,11 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
 - **Search:** search page titles, editor text, and structured database cells; database results show a useful row preview.
-- **Portable exports:** export any page as a standalone HTML document, or export/import structured databases as CSV. Database HTML exports include a readable table; user content is escaped where rendered as table data.
+- **Portable exports:** export any page or structured database as a standalone HTML document, and export/import databases as CSV. Database HTML exports use escaped table-cell data; page HTML is sanitized with DOMPurify using an explicit tag/attribute allowlist.
 - **Backups:** export all workspace data to JSON and import a validated backup.
 - **Appearance:** light and dark themes, responsive sidebar, and mobile navigation.
 - **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
-- **Automated checks:** unit tests cover backup validation, structured database data, database-cell search, safe duplication, local persistence fallback, CSV escaping, and typed CSV import validation; GitHub Actions reports dependency advisories, runs tests, and builds production bundles with separate React/editor chunks.
+- **Automated checks:** unit tests cover backup validation, structured database data, database-cell search, safe duplication, local persistence fallback, CSV escaping, typed CSV import validation, HTML export, and unsafe HTML payloads; GitHub Actions reports dependency advisories, runs tests, and builds production bundles with separate React/editor chunks.
 
 ## Requirements
 
