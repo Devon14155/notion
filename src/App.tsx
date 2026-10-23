@@ -64,8 +64,7 @@ function loadNotes(): Note[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return starterNotes;
-    const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.every((n) => n && typeof n.id === "string" && typeof n.title === "string" && typeof n.content === "string")) return parsed as Note[];
+    return parseWorkspaceBackup(raw) as Note[];
   } catch (error) {
     console.error("Could not load local workspace data", error);
   }
