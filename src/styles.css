@@ -390,3 +390,4 @@ body, button, input, select, textarea { font-family: ui-sans-serif, -apple-syste
 .editor-block-handle { cursor: pointer; }
 .editor-block-handle:active { background: var(--hover); color: var(--text); }
 .floating-editor-toolbar .page-link-picker { max-width: calc(100vw - 20px); }
+.editor-block-menu button:disabled { opacity: .35; cursor: default; }
