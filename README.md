@@ -10,7 +10,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
-- **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties, rename properties by double-clicking their headers, filter and sort table views, switch to a status-grouped board, or see entries in a month calendar when a Date property is configured. Database cells are included in workspace search and JSON backups.
+- **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties, rename properties by double-clicking their headers, filter and sort table views, export structured data to quoted CSV, switch to a status-grouped board, or see entries in a month calendar when a Date property is configured. Database cells are included in workspace search and JSON backups.
 - **Local persistence:** IndexedDB is the primary on-device store, with a one-time migration from legacy localStorage and a fallback for restricted browsers. Writes are debounced to keep editing responsive. There is no account or cloud sync.
 - **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
@@ -18,7 +18,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - **Backups:** export all workspace data to JSON and import a validated backup.
 - **Appearance:** light and dark themes, responsive sidebar, and mobile navigation.
 - **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
-- **Automated checks:** unit tests cover backup validation, structured database data, database-cell search, safe duplication, and local persistence fallback; GitHub Actions reports dependency advisories, runs tests, and builds production bundles with separate React/editor chunks.
+- **Automated checks:** unit tests cover backup validation, structured database data, database-cell search, safe duplication, local persistence fallback, and CSV quoting; GitHub Actions reports dependency advisories, runs tests, and builds production bundles with separate React/editor chunks.
 
 ## Requirements
 
