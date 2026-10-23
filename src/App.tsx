@@ -15,7 +15,7 @@ import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink, Download, Upload, Undo2, Redo2
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink, Download, Upload, Undo2, Redo2, Code2, Minus
 } from "lucide-react";
 
 type Note = {
@@ -701,6 +701,8 @@ function App() {
                 </div>}
               </div>
               <button className={editor?.isActive("blockquote") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBlockquote().run()} aria-label="Quote"><Quote size={15}/></button>
+              <button className={editor?.isActive("codeBlock") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleCodeBlock().run()} aria-label="Code block" title="Code block"><Code2 size={15}/></button>
+              <button type="button" onClick={() => editor?.chain().focus().setHorizontalRule().run()} aria-label="Insert divider" title="Insert divider"><Minus size={15}/></button>
             </div>
             <div className="editor-area" ref={editorAreaRef}>
               <EditorContent editor={editor}/>
