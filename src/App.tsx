@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { parseWorkspaceBackup, searchNotes } from "./lib/workspace";
 import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
@@ -60,11 +61,32 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const modifier = event.metaKey || event.ctrlKey;
+      const target = event.target as HTMLElement | null;
+      const typing = !!target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+      if (modifier && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen(true);
+        window.setTimeout(() => document.getElementById("global-search")?.focus(), 0);
+      } else if (modifier && event.key.toLowerCase() === "n" && !typing) {
+        event.preventDefault();
+        createNote();
+      } else if (event.key === "Escape" && searchOpen) {
+        setSearchOpen(false);
+        setQuery("");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [searchOpen, notes]);
+
   const visibleNotes = useMemo(() => {
     const active = notes.filter((n) => section === "trash" ? n.trashed : !n.trashed);
     const scoped = section === "favorites" ? active.filter((n) => n.favorite) : section === "recent" ? [...active].sort((a,b) => b.updatedAt-a.updatedAt) : active;
     const q = query.trim().toLowerCase();
-    return q ? scoped.filter((n) => n.title.toLowerCase().includes(q) || n.content.replace(/<[^>]+>/g, " ").toLowerCase().includes(q)) : scoped;
+    return q ? searchNotes(scoped, q) : scoped;
   }, [notes, query, section]);
 
   const activeNote = notes.find((n) => n.id === activeId && !n.trashed) ?? visibleNotes[0] ?? null;
@@ -127,7 +149,7 @@ function App() {
   };
 
   const exportNotes = () => {
-    const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), notes }, null, 2);
+    const payload = JSON.stringify({ schemaVersion: 1, exportedAt: new Date().toISOString(), notes }, null, 2);
     const blob = new Blob([payload], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -139,9 +161,7 @@ function App() {
   const importNotes = async (file?: File) => {
     if (!file) return;
     try {
-      const parsed = JSON.parse(await file.text());
-      const incoming = Array.isArray(parsed) ? parsed : parsed.notes;
-      if (!Array.isArray(incoming) || !incoming.every((n: any) => n && typeof n.id === "string" && typeof n.title === "string" && typeof n.content === "string")) throw new Error("Invalid backup format");
+      const incoming = parseWorkspaceBackup(await file.text());
       setNotes((prev) => {
         const byId = new Map(prev.map((n) => [n.id, n]));
         incoming.forEach((n: Note) => byId.set(n.id, n));
