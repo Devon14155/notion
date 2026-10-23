@@ -6,23 +6,35 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return;
-          if (
-            id.includes("/@tiptap/") ||
-            id.includes("/prosemirror-") ||
-            id.includes("/orderedmap/") ||
-            id.includes("/rope-sequence/")
-          ) {
-            return "vendor-editor";
-          }
-          if (
-            id.includes("/react/") ||
-            id.includes("/react-dom/") ||
-            id.includes("/scheduler/")
-          ) {
-            return "vendor-react";
-          }
+        codeSplitting: {
+          minSize: 18000,
+          groups: [
+            {
+              name: "vendor-react",
+              test: /node_modules[\\/](?:react|react-dom|scheduler)[\\/]/,
+              priority: 30
+            },
+            {
+              name: "vendor-editor-table",
+              test: /node_modules[\\/]@tiptap[\\/]extension-table[\\/]/,
+              priority: 20
+            },
+            {
+              name: "vendor-editor-lists",
+              test: /node_modules[\\/]@tiptap[\\/]extension-list[\\/]/,
+              priority: 20
+            },
+            {
+              name: "vendor-editor-extensions",
+              test: /node_modules[\\/]@tiptap[\\/]extensions[\\/]/,
+              priority: 20
+            },
+            {
+              name: "vendor-editor",
+              test: /node_modules[\\/](?:@tiptap|prosemirror-|orderedmap|rope-sequence)/,
+              priority: 10
+            }
+          ]
         }
       }
     }
