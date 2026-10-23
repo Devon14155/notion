@@ -6,7 +6,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 
 ## Features
 
-- **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
+- **Rich-text pages:** headings, bold, italic, visible undo/redo controls, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
@@ -63,7 +63,7 @@ npm run preview
 - Database features are intentionally focused: no formulas, relations, rollups, aggregations, or per-view filters yet. Calendar views require a Date property. Inline editor tables are document content; database pages are separate structured data.
 - No multi-device sync, user accounts, collaboration, or server-side storage.
 - The localStorage fallback has limited capacity; IndexedDB is preferred, but neither store replaces regular JSON backups. Local image uploads are limited to 512 KB each.
-- Accessibility, browser compatibility, security review, dependency auditing, and end-to-end tests still need further work before production use.
+- Accessibility, browser compatibility, security review, and end-to-end tests still need further work before production use. The automated npm audit currently reports no known package advisories for the installed dependency tree; this is not a guarantee against future vulnerabilities.
 
 ## Architecture
 
