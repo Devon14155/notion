@@ -3,6 +3,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { parseWorkspaceBackup, searchNotes } from "./lib/workspace";
+import PageTree from "./components/PageTree";
 import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
@@ -17,6 +18,7 @@ type Note = {
   updatedAt: number;
   favorite: boolean;
   icon: string;
+  parentId?: string;
   trashed?: boolean;
 };
 
@@ -48,6 +50,7 @@ function App() {
   const [dark, setDark] = useState(false);
   const [section, setSection] = useState<"all" | "favorites" | "recent" | "trash">("all");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -107,9 +110,10 @@ function App() {
     }
   }, [activeId, editor]);
 
-  const createNote = () => {
-    const note: Note = { id: crypto.randomUUID(), title: "Untitled", content: "<p></p>", updatedAt: Date.now(), favorite: false, icon: "📄" };
+  const createNote = (parentId?: string) => {
+    const note: Note = { id: crypto.randomUUID(), title: "Untitled", content: "<p></p>", updatedAt: Date.now(), favorite: false, icon: "📄", ...(parentId ? { parentId } : {}) };
     setNotes((prev) => [note, ...prev]);
+    if (parentId) setExpandedIds((prev) => new Set(prev).add(parentId));
     setActiveId(note.id);
     setSection("all");
     setQuery("");
@@ -143,7 +147,7 @@ function App() {
   };
 
   const permanentlyDelete = (id: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== id));
+    setNotes((prev) => prev.filter((n) => n.id !== id).map((n) => n.parentId === id ? { ...n, parentId: undefined } : n));
     if (activeId === id) setActiveId("");
     setToast("Page permanently deleted");
   };
@@ -190,7 +194,7 @@ function App() {
         <div className="side-label">WORKSPACE <button className="tiny-icon" aria-label="Add page" onClick={createNote}><Plus size={15}/></button></div>
         <nav className="page-nav" aria-label="Workspace navigation">
           <button className={`nav-item ${section === "all" ? "selected" : ""}`} onClick={() => chooseSection("all")}><ChevronDown size={14}/><FileText size={15}/><span>Private pages</span></button>
-          {notes.filter(n => !n.trashed).slice(0, 5).map(note => <button key={note.id} className={`page-link ${activeNote?.id === note.id ? "active" : ""}`} onClick={() => { setActiveId(note.id); setSection("all"); setMobileMenu(false); }}><span className="page-emoji">{note.icon || "📄"}</span><span className="page-link-title">{note.title || "Untitled"}</span>{note.favorite && <Star size={12} className="favorite-mini" fill="currentColor"/>}</button>)}
+          <PageTree pages={notes.filter(n => !n.trashed)} activeId={activeNote?.id ?? ""} expandedIds={expandedIds} onSelect={id => { setActiveId(id); setSection("all"); setMobileMenu(false); }} onToggleExpanded={id => setExpandedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onCreateChild={parentId => createNote(parentId)} />
           <button className="nav-item muted-nav" onClick={createNote}><Plus size={15}/><span>Add a page</span></button>
         </nav>
         <div className="side-label">PERSONAL</div>
