@@ -383,3 +383,10 @@ body, button, input, select, textarea { font-family: ui-sans-serif, -apple-syste
   .database-more-menu { right: 0; }
   .database-title-cell-wrap { gap: 5px; }
 }
+
+/* Remove app-specific save/status chrome from the writing surface. */
+.document-meta, .page-actions { display: none; }
+.page-actions-row { justify-content: flex-start; margin-bottom: 18px; }
+.editor-block-handle { cursor: pointer; }
+.editor-block-handle:active { background: var(--hover); color: var(--text); }
+.floating-editor-toolbar .page-link-picker { max-width: calc(100vw - 20px); }
