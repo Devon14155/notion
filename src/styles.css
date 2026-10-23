@@ -272,3 +272,89 @@ body, button, input, select, textarea { font-family: ui-sans-serif, -apple-syste
 @media (min-width: 701px) {
   .sidebar.sidebar-collapsed { width: 0; flex-basis: 0; padding-left: 0; padding-right: 0; border: 0; }
 }
+
+/* Interactive document affordances inspired by Notion's block editor. */
+.breadcrumb-item { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.breadcrumb-parent {
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border: 0; border-radius: 4px; padding: 4px 5px; background: transparent;
+  color: var(--muted); font: inherit;
+}
+.breadcrumb-parent:hover { background: var(--hover); color: var(--text); }
+.workspace-menu-wrap { position: relative; display: flex; align-items: center; }
+.topbar-favorite { color: var(--muted); }
+.topbar-favorite.is-favorite { color: #b39a42 !important; }
+.topbar-favorite:disabled { opacity: .35; cursor: default; }
+.workspace-menu {
+  position: absolute; z-index: 70; top: calc(100% + 5px); right: 0;
+  display: grid; gap: 2px; width: 228px; padding: 5px;
+  border: 1px solid var(--line); border-radius: 7px; background: var(--surface);
+  color: var(--text); box-shadow: 0 8px 28px #00000018;
+}
+.workspace-menu button {
+  display: flex; align-items: center; gap: 9px; min-height: 32px; width: 100%;
+  padding: 0 9px; border: 0; border-radius: 4px; background: transparent;
+  color: inherit; text-align: left; font-size: 12px;
+}
+.workspace-menu button:hover { background: var(--hover); }
+.workspace-menu button:disabled { opacity: .4; cursor: default; }
+.workspace-menu-divider { height: 1px; margin: 3px 2px; background: var(--line); }
+.editor-area { position: relative; min-width: 0; }
+.editor-block-handle {
+  position: absolute; left: -31px; z-index: 24; width: 25px; height: 25px;
+  display: grid; place-items: center; padding: 0;
+  border: 0; border-radius: 4px; background: transparent; color: #a2a29d;
+  cursor: grab;
+}
+.editor-block-handle:hover, .editor-block-handle:focus-visible { background: var(--hover); color: var(--text); }
+.editor-block-menu {
+  position: absolute; left: -9px; z-index: 45; display: grid; gap: 2px;
+  width: 176px; padding: 5px; border: 1px solid var(--line); border-radius: 7px;
+  background: var(--surface); color: var(--text); box-shadow: 0 8px 28px #00000018;
+}
+.editor-block-menu button {
+  display: flex; align-items: center; gap: 9px; min-height: 32px;
+  border: 0; border-radius: 4px; background: transparent; color: inherit;
+  padding: 0 9px; text-align: left; font-size: 12px;
+}
+.editor-block-menu button:hover { background: var(--hover); }
+.editor-block-menu button:last-child:hover { color: #c85050; }
+.floating-editor-toolbar {
+  position: fixed !important; z-index: 65; display: flex; align-items: center;
+  gap: 2px; width: max-content; max-width: calc(100vw - 16px);
+  padding: 4px; margin: 0; border: 1px solid var(--line) !important;
+  border-radius: 7px; background: var(--surface);
+  box-shadow: 0 5px 20px #00000020; color: var(--text);
+}
+.floating-editor-toolbar .toolbar-separator { margin: 0 3px; }
+.floating-editor-toolbar .page-link-picker { top: calc(100% + 7px); left: 0; }
+.slash-command-menu { width: min(320px, calc(100vw - 52px)); max-height: min(360px, 58dvh); padding: 5px; gap: 1px; border-radius: 7px; }
+.slash-command-group { display: grid; gap: 1px; }
+.slash-command-category { padding: 7px 8px 3px; color: var(--muted); font-size: 10px; font-weight: 600; }
+.slash-command-option { min-height: 44px; border-radius: 4px; gap: 9px; padding: 6px 8px; }
+.slash-command-glyph { border-radius: 4px; background: var(--surface); }
+.slash-command-copy strong { font-size: 12px; font-weight: 500; }
+.slash-command-copy small { font-size: 11px; }
+.slash-command-option kbd { font-size: 11px; border-radius: 3px; border-color: var(--line); }
+.database-toolbar { margin: 13px 0 8px; padding: 6px 0 9px; border-top: 0; border-bottom: 1px solid var(--line); }
+.database-view-switch { border: 0; padding: 0; gap: 5px; background: transparent; }
+.database-view-switch button { height: 31px; padding: 0 8px; border-radius: 0; border-bottom: 2px solid transparent; font-size: 12px; }
+.database-view-switch button.active { background: transparent; color: var(--text); box-shadow: none; border-bottom-color: var(--text); }
+.database-filter { height: 30px; border: 1px solid transparent; border-radius: 4px; }
+.database-filter:focus-within { border-color: var(--line); background: var(--surface); }
+.database-action-button { border-radius: 4px; }
+.database-table-wrap { border: 0; border-radius: 0; }
+.database-table { font-size: 13px; }
+.database-table th { height: 34px; background: transparent; border-right: 0; font-size: 12px; font-weight: 500; }
+.database-table td { height: 41px; border-right: 0; }
+.database-cell-input { height: 31px; font-size: 13px; }
+.database-title-cell { font-weight: 500; }
+.database-board { gap: 10px; }
+.database-board-column { border-radius: 5px; padding: 7px; }
+.database-board-card { border-radius: 5px; box-shadow: none; }
+.database-calendar-scroll { border-radius: 5px; }
+@media (hover: none) and (max-width: 700px) {
+  .editor-block-handle { left: -26px; width: 23px; height: 23px; }
+  .floating-editor-toolbar { gap: 0; }
+  .floating-editor-toolbar .editor-toolbar button { min-width: 27px; }
+}
