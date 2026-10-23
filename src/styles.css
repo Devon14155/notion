@@ -358,3 +358,28 @@ body, button, input, select, textarea { font-family: ui-sans-serif, -apple-syste
   .floating-editor-toolbar { gap: 0; }
   .floating-editor-toolbar .editor-toolbar button { min-width: 27px; }
 }
+
+/* Compact database actions: keep daily work visible and move file operations into one menu. */
+.database-more-wrap { position: relative; display: flex; align-items: center; }
+.database-more-trigger { width: 32px; min-width: 32px; padding: 0; }
+.database-more-menu {
+  position: absolute; z-index: 50; top: calc(100% + 5px); right: 0;
+  display: grid; gap: 2px; width: 165px; padding: 5px;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface); color: var(--text); box-shadow: 0 8px 24px #00000018;
+}
+.database-more-menu button {
+  display: flex; align-items: center; gap: 8px; min-height: 31px;
+  padding: 0 8px; border: 0; border-radius: 4px;
+  background: transparent; color: inherit; text-align: left; font-size: 12px;
+}
+.database-more-menu button:hover { background: var(--hover); }
+.database-title-cell-wrap { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.database-title-cell-wrap > span { flex: 0 0 auto; font-size: 14px; line-height: 1; opacity: .8; }
+.database-title-cell-wrap .database-cell-input { min-width: 90px; flex: 1; }
+@media (max-width: 700px) {
+  .topbar .more-button { display: inline-flex; }
+  .database-toolbar .database-action-button.primary { flex: 0 0 auto; }
+  .database-more-menu { right: 0; }
+  .database-title-cell-wrap { gap: 5px; }
+}
