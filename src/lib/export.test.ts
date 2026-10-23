@@ -21,6 +21,19 @@ describe("page HTML export", () => {
     expect(html).not.toContain("<script");
   });
 
+  it("removes executable markup and event handlers from imported content", () => {
+    const unsafe: WorkspaceNote = {
+      ...page,
+      content: '<p onclick="alert(1)">Safe text</p><script>alert(1)</script><img src="javascript:alert(1)" onerror="alert(1)">'
+    };
+    const html = createPageHtml(unsafe);
+    expect(html).toContain("<p>Safe text</p>");
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("onclick=");
+    expect(html).not.toContain("onerror=");
+    expect(html).not.toContain("javascript:");
+  });
+
   it("exports structured database rows as escaped table cells", () => {
     const database: WorkspaceNote = {
       ...page,
