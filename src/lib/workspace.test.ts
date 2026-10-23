@@ -23,6 +23,19 @@ describe("parseWorkspaceBackup", () => {
     expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [notes[0], notes[0]] }))).toThrow(/duplicate page IDs/);
   });
 
+  it("preserves nested page relationships", () => {
+    const nested = [{ ...notes[0] }, { ...notes[1], parentId: "one" }];
+    expect(parseWorkspaceBackup(JSON.stringify({ schemaVersion: 1, notes: nested }))).toEqual(nested);
+  });
+
+  it("rejects cyclic page hierarchies", () => {
+    const cyclic = [
+      { ...notes[0], parentId: "two" },
+      { ...notes[1], parentId: "one" }
+    ];
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: cyclic }))).toThrow(/hierarchy contains a cycle/);
+  });
+
   it("rejects invalid JSON", () => {
     expect(() => parseWorkspaceBackup("{")).toThrow();
   });
