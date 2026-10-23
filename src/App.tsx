@@ -594,7 +594,7 @@ function App() {
       {mobileMenu && <button className="mobile-backdrop" aria-label="Close navigation" onClick={() => setMobileMenu(false)} />}
       <aside className={`sidebar ${sidebarOpen ? "" : "sidebar-collapsed"} ${mobileMenu ? "mobile-visible" : ""}`}>
         <div className="workspace-switcher">
-          <div className="workspace-mark">n</div>
+          <div className="workspace-mark" aria-hidden="true">N</div>
           <div className="workspace-meta"><strong>My workspace</strong><span>Personal space</span></div>
           <button className="icon-button subtle" aria-label="Workspace options" onClick={() => setToast("Workspace settings are coming next")}><ChevronDown size={15}/></button>
         </div>
@@ -603,16 +603,18 @@ function App() {
           <button className="nav-item" onClick={() => setToast("Inbox is ready for a future notification integration")}><Inbox size={16}/><span>Inbox</span></button>
           <button className="nav-item" onClick={() => chooseSection("all")}><Home size={16}/><span>Home</span></button>
         </div>
-        <div className="side-label">WORKSPACE <button className="tiny-icon" aria-label="Add page" onClick={() => createNote()}><Plus size={15}/></button></div>
-        <nav className="page-nav" aria-label="Workspace navigation">
-          <button className={`nav-item ${section === "all" ? "selected" : ""}`} onClick={() => chooseSection("all")}><ChevronDown size={14}/><FileText size={15}/><span>Private pages</span></button>
+        <div className="side-label">Favorites</div>
+        <nav className="page-nav favorites-nav" aria-label="Favorite pages">
+          <PageTree pages={notes.filter(n => !n.trashed && n.favorite)} activeId={activeNote?.id ?? ""} expandedIds={expandedIds} onSelect={id => { setActiveId(id); setSection("all"); setMobileMenu(false); }} onToggleExpanded={id => setExpandedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onCreateChild={parentId => createNote(parentId)} />
+        </nav>
+        <div className="side-label">Private <button className="tiny-icon" aria-label="Add page" onClick={() => createNote()}><Plus size={15}/></button></div>
+        <nav className="page-nav" aria-label="Private pages">
           <PageTree pages={notes.filter(n => !n.trashed)} activeId={activeNote?.id ?? ""} expandedIds={expandedIds} onSelect={id => { setActiveId(id); setSection("all"); setMobileMenu(false); }} onToggleExpanded={id => setExpandedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onCreateChild={parentId => createNote(parentId)} />
           <button className="nav-item muted-nav" onClick={() => createNote()}><Plus size={15}/><span>Add a page</span></button>
           <button className="nav-item muted-nav" onClick={createDatabase}><Table2 size={15}/><span>Add a database</span></button>
         </nav>
-        <div className="side-label">PERSONAL</div>
-        <nav className="page-nav">
-          <button className={`nav-item ${section === "favorites" ? "selected" : ""}`} onClick={() => chooseSection("favorites")}><Star size={16}/><span>Favorites</span></button>
+        <div className="side-label">More</div>
+        <nav className="page-nav" aria-label="More navigation">
           <button className={`nav-item ${section === "recent" ? "selected" : ""}`} onClick={() => chooseSection("recent")}><Clock3 size={16}/><span>Recently edited</span></button>
           <button className={`nav-item ${section === "trash" ? "selected" : ""}`} onClick={() => chooseSection("trash")}><Trash2 size={16}/><span>Trash</span></button>
         </nav>
@@ -627,7 +629,7 @@ function App() {
           <div className="breadcrumbs">
             <button className="icon-button mobile-menu-button" aria-label="Open navigation" onClick={() => setMobileMenu(true)}><PanelLeft size={17}/></button>
             <button className="icon-button desktop-sidebar-toggle" aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"} onClick={() => setSidebarOpen(v => !v)}>{sidebarOpen ? <PanelLeftClose size={17}/> : <PanelLeft size={17}/>}</button>
-            <span className="crumb-muted">Private pages</span><ChevronRight size={13}/><span className="crumb-current">{activeNote?.title || (section === "trash" ? "Trash" : "Your pages")}</span>
+            <span className="crumb-muted">Private</span><ChevronRight size={13}/><span className="crumb-current">{activeNote?.title || (section === "trash" ? "Trash" : "Your pages")}</span>
           </div>
           <div className="topbar-actions">
             <button className="icon-button" aria-label="Toggle color theme" onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>}</button>
