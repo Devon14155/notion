@@ -25,6 +25,14 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 - Node.js 22 or newer
 - npm
 
+## Free static deployment
+
+The repository includes a GitHub Actions workflow that tests and builds the app on every push to `main`. It deploys the static build to GitHub Pages when publishing is enabled; otherwise it skips the deploy step without failing the build.
+
+To publish it, open **Repository Settings → Pages → Build and deployment**, choose **GitHub Actions** as the source, and save. The next push to `main` will publish the app; you can also run **Deploy to GitHub Pages** manually from the Actions tab. The published app uses relative asset paths, so it works at the repository's Pages URL. No paid API or app server is required.
+
+Notes remain in each visitor's browser profile. Publishing the app does not upload notes to the repository or create shared accounts.
+
 ## Run locally
 
 ```bash
