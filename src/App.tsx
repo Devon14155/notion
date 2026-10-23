@@ -9,7 +9,8 @@ import Table from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
-import { parseWorkspaceBackup, searchNotes } from "./lib/workspace";
+import { parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
+import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
 import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
@@ -26,6 +27,8 @@ type Note = {
   favorite: boolean;
   icon: string;
   parentId?: string;
+  kind?: "page" | "database";
+  database?: WorkspaceDatabase;
   trashed?: boolean;
 };
 
@@ -253,6 +256,40 @@ function App() {
     if (window.innerWidth < 760) setMobileMenu(false);
   };
 
+  const createDatabase = () => {
+    const note: Note = {
+      id: crypto.randomUUID(),
+      title: "Untitled database",
+      content: "<p></p>",
+      updatedAt: Date.now(),
+      favorite: false,
+      icon: "🗃️",
+      kind: "database",
+      database: {
+        view: "table",
+        properties: [
+          { id: "name", name: "Name", type: "text" },
+          { id: "status", name: "Status", type: "status", options: ["Not started", "In progress", "Done"] }
+        ],
+        rows: []
+      }
+    };
+    setNotes((prev) => [note, ...prev]);
+    setActiveId(note.id);
+    setSection("all");
+    setQuery("");
+    setToast("Database created");
+    if (window.innerWidth < 760) setMobileMenu(false);
+  };
+
+  const updateActiveDatabase = (database: WorkspaceDatabase) => {
+    if (!activeNote) return;
+    const id = activeNote.id;
+    setNotes((prev) => prev.map((note) => note.id === id
+      ? { ...note, kind: "database", database, updatedAt: Date.now() }
+      : note));
+  };
+
   const renameActive = (title: string) => {
     if (!activeNote) return;
     setNotes((prev) => prev.map((n) => n.id === activeNote.id ? { ...n, title, updatedAt: Date.now() } : n));
@@ -338,6 +375,7 @@ function App() {
           <button className={`nav-item ${section === "all" ? "selected" : ""}`} onClick={() => chooseSection("all")}><ChevronDown size={14}/><FileText size={15}/><span>Private pages</span></button>
           <PageTree pages={notes.filter(n => !n.trashed)} activeId={activeNote?.id ?? ""} expandedIds={expandedIds} onSelect={id => { setActiveId(id); setSection("all"); setMobileMenu(false); }} onToggleExpanded={id => setExpandedIds(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; })} onCreateChild={parentId => createNote(parentId)} />
           <button className="nav-item muted-nav" onClick={() => createNote()}><Plus size={15}/><span>Add a page</span></button>
+          <button className="nav-item muted-nav" onClick={createDatabase}><Table2 size={15}/><span>Add a database</span></button>
         </nav>
         <div className="side-label">PERSONAL</div>
         <nav className="page-nav">
@@ -377,7 +415,7 @@ function App() {
         </div>}
 
         <div className="page-scroll">
-          {activeNote ? <article className="document">
+          {activeNote ? (activeNote.kind === "database" && activeNote.database && section !== "trash" ? <DatabaseView title={activeNote.title} icon={activeNote.icon} favorite={activeNote.favorite} updatedAt={activeNote.updatedAt} database={activeNote.database} onRename={renameActive} onDatabaseChange={updateActiveDatabase} onToggleFavorite={toggleFavorite} onTrash={moveToTrash} /> : <article className="document">
             <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> Saved locally</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button><button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
             <input className="document-title" value={activeNote.title} onChange={e => renameActive(e.target.value)} aria-label="Page title" placeholder="Untitled"/>
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
@@ -405,7 +443,7 @@ function App() {
               {slashMenu && filteredSlashCommands.length === 0 && <div className="slash-command-menu slash-command-empty" style={{ left: slashMenu.left, top: slashMenu.top }}>No matching commands</div>}
             </div>
             <div className="document-end"><span>✳</span><span>Made for your thoughts.</span></div>
-          </article> : <div className="empty-state"><div className="empty-state-icon">{section === "trash" ? "🗑️" : "✳️"}</div><h2>{section === "trash" ? "Trash is empty" : "A little room to think"}</h2><p>{section === "trash" ? "Deleted pages will show up here." : "Create a page and start capturing your ideas."}</p>{section !== "trash" && <button className="primary-button" onClick={() => createNote()}><Plus size={16}/> Create a page</button>}</div>}
+          </article>) : <div className="empty-state"><div className="empty-state-icon">{section === "trash" ? "🗑️" : "✳️"}</div><h2>{section === "trash" ? "Trash is empty" : "A little room to think"}</h2><p>{section === "trash" ? "Deleted pages will show up here." : "Create a page and start capturing your ideas."}</p>{section !== "trash" && <button className="primary-button" onClick={() => createNote()}><Plus size={16}/> Create a page</button>}</div>}
         </div>
         <footer className="statusbar"><div><span className="status-dot"/>{notes.filter(n => !n.trashed).length} pages <span className="status-separator">·</span> Local workspace</div><div className="status-shortcuts"><span><Command size={11}/> K to search</span><span><BookOpen size={12}/> Your space, your rules</span></div></footer>
       </main>
