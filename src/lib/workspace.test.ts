@@ -68,6 +68,18 @@ describe("parseWorkspaceBackup", () => {
     expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
   });
 
+  it("rejects select options attached to a text property", () => {
+    const invalidOptions: WorkspaceDatabase = {
+      ...database,
+      properties: [
+        { ...database.properties[0], options: ["A", "B"] },
+        database.properties[1]
+      ]
+    };
+    const malformed: WorkspaceNote = { ...notes[0], kind: "database", database: invalidOptions };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
   it("rejects duplicate select options ignoring case and whitespace", () => {
     const duplicateOptions: WorkspaceDatabase = {
       ...database,
