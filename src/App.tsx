@@ -122,7 +122,7 @@ function App() {
     const selection = current.state.selection;
     const $from = selection.$from;
     const text = $from.parent.textContent;
-    const match = /^\\/([a-z0-9 ]*)$/i.exec(text);
+    const match = /^\/([a-z0-9 ]*)$/i.exec(text);
     if (!selection.empty || !$from.parent.isTextblock || $from.parentOffset !== $from.parent.content.size || !match) {
       slashMenuRef.current = null;
       setSlashMenu(null);
@@ -205,7 +205,7 @@ function App() {
     if (!editor) return;
     const { selection } = editor.state;
     const $from = selection.$from;
-    if (!selection.empty || !$from.parent.isTextblock || !/^\\/([a-z0-9 ]*)$/i.test($from.parent.textContent)) {
+    if (!selection.empty || !$from.parent.isTextblock || !/^\/([a-z0-9 ]*)$/i.test($from.parent.textContent)) {
       slashMenuRef.current = null;
       setSlashMenu(null);
       return;
