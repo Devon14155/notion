@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Workspace lotus</title>
+  <rect width="512" height="512" rx="112" fill="#f7f7f5"/>
+  <g fill="none" stroke="#64745c" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 351c-18-48-16-96 0-144 16 48 18 96 0 144Z" fill="#dce5d4"/>
+    <path d="M239 328c-49-8-89-37-117-79 54-1 99 23 134 70"/>
+    <path d="M273 328c49-8 89-37 117-79-54-1-99 23-134 70"/>
+    <path d="M251 351c-42-1-81-14-116-41 48-16 91-11 132 13"/>
+    <path d="M261 351c42-1 81-14 116-41-48-16-91-11-132 13"/>
+    <path d="M256 353v47"/>
+    <path d="M170 402h172"/>
+  </g>
+</svg>
