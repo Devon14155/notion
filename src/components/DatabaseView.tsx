@@ -6,7 +6,7 @@ import {
 import type {
   DatabaseCell, DatabaseProperty, DatabasePropertyType, DatabaseRow, WorkspaceDatabase
 } from "../lib/workspace";
-import { importDatabaseCsv, serializeDatabaseCsv } from "../lib/csv";
+import { databaseCsvFileContent, importDatabaseCsv } from "../lib/csv";
 
 type DatabaseViewProps = {
   title: string;
@@ -116,7 +116,7 @@ export default function DatabaseView({
   const addRow = () => onDatabaseChange({ ...database, rows: [...database.rows, createRow(database)] });
 
   const exportCsv = () => {
-    const blob = new Blob(["\\uFEFF", serializeDatabaseCsv(database)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([databaseCsvFileContent(database)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     const filename = title.trim().replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64) || "database";
