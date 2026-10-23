@@ -50,6 +50,11 @@ describe("parseWorkspaceBackup", () => {
     expect(parseWorkspaceBackup(JSON.stringify({ schemaVersion: 1, notes: [databaseNote] }))).toEqual([databaseNote]);
   });
 
+  it("rejects databases with no properties", () => {
+    const malformed = { ...notes[0], kind: "database", database: { ...database, properties: [], rows: [] } };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
+  });
+
   it("rejects database rows that reference unknown properties", () => {
     const malformed = { ...notes[0], kind: "database", database: { ...database, rows: [{ id: "row-1", cells: { missing: "value" } }] } };
     expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
