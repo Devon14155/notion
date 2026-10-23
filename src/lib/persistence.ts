@@ -147,13 +147,7 @@ export async function loadPersistedWorkspace(): Promise<LoadedWorkspace> {
  * and embedded images much better than synchronous localStorage writes.
  * localStorage remains a compatibility fallback for restricted browsers.
  */
-export async function savePersistedWorkspace(notes: WorkspaceNote[]): Promise<StorageBackend> {
-  const snapshot: WorkspaceSnapshot = {
-    schemaVersion: 1,
-    savedAt: Date.now(),
-    notes
-  };
-
+async function persistWorkspaceSnapshot(snapshot: WorkspaceSnapshot): Promise<StorageBackend> {
   try {
     await writeIndexedDbSnapshot(snapshot);
     return "indexeddb";
@@ -172,4 +166,22 @@ export async function savePersistedWorkspace(notes: WorkspaceNote[]): Promise<St
       );
     }
   }
+}
+
+// Serialize snapshots in call order. IndexedDB connections are opened asynchronously,
+// so overlapping saves otherwise risk an older snapshot committing after a newer one.
+let writeQueue: Promise<void> = Promise.resolve();
+
+export function savePersistedWorkspace(notes: WorkspaceNote[]): Promise<StorageBackend> {
+  const snapshot: WorkspaceSnapshot = {
+    schemaVersion: 1,
+    savedAt: Date.now(),
+    notes
+  };
+
+  const writeResult = writeQueue
+    .catch(() => undefined)
+    .then(() => persistWorkspaceSnapshot(snapshot));
+  writeQueue = writeResult.then(() => undefined, () => undefined);
+  return writeResult;
 }
