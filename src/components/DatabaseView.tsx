@@ -10,6 +10,7 @@ import type {
 type DatabaseViewProps = {
   title: string;
   icon: string;
+  onIconChange: (icon: string) => void;
   favorite: boolean;
   updatedAt: number;
   database: WorkspaceDatabase;
@@ -22,6 +23,7 @@ type DatabaseViewProps = {
 type SortState = { propertyId: string; direction: "asc" | "desc" } | null;
 
 const defaultStatusOptions = ["Not started", "In progress", "Done"];
+const pageIcons = ["📄", "✳️", "📝", "💡", "📚", "✅", "🎯", "🗓️", "💼", "🧠", "⭐", "🚀", "🌱", "🎨", "🔬", "💻", "📌", "❤️", "📈", "🧪", "🏠", "🎓", "🛠️", "🌍"];
 
 function valueText(value: DatabaseCell | undefined): string {
   if (value === null || value === undefined) return "";
@@ -46,6 +48,7 @@ function createRow(database: WorkspaceDatabase): DatabaseRow {
 export default function DatabaseView({
   title,
   icon,
+  onIconChange,
   favorite,
   updatedAt,
   database,
@@ -55,6 +58,7 @@ export default function DatabaseView({
   onTrash
 }: DatabaseViewProps) {
   const [filter, setFilter] = useState("");
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [sort, setSort] = useState<SortState>(null);
   const [addingProperty, setAddingProperty] = useState(false);
   const [newPropertyName, setNewPropertyName] = useState("");
@@ -202,7 +206,7 @@ export default function DatabaseView({
   return (
     <article className="document database-document">
       <div className="page-actions-row">
-        <div className="page-icon-large">{icon || "🗃️"}</div>
+        <div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change database icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen((value) => !value)}>{icon || "🗃️"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose database icon">{pageIcons.map((option) => <button key={option} type="button" className={icon === option ? "chosen" : ""} aria-label={`Use ${option} as database icon`} onClick={() => { onIconChange(option); setIconPickerOpen(false); }}>{option}</button>)}</div>}</div>
         <div className="page-actions">
           <span className="saved-label"><span className="status-dot" /> Saved locally</span>
           <button className={`icon-button ${favorite ? "is-favorite" : ""}`} onClick={onToggleFavorite} aria-label={favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={favorite ? "currentColor" : "none"} /></button>
