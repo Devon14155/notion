@@ -9,6 +9,15 @@ function escapeHtml(value: unknown): string {
     .replace(/'/g, "&#39;");
 }
 
+function sanitizeEditorHtml(html: string): string {
+  return html
+    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi, "")
+    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\\b[^>]*\\/?\\s*>/gi, "")
+    .replace(/\\s+on[a-z]+\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s>]+)/gi, "")
+    .replace(/\\s+(href|src|xlink:href)\\s*=\\s*(["'])\\s*(?:javascript|vbscript):[\\s\\S]*?\\2/gi, "")
+    .replace(/\\s+(href|src|xlink:href)\\s*=\\s*(?:javascript|vbscript):[^\\s>]*/gi, "");
+}
+
 function databaseTable(note: WorkspaceNote): string {
   const database = note.database;
   if (!database) return "";
@@ -26,7 +35,7 @@ function databaseTable(note: WorkspaceNote): string {
 /** Create a self-contained, script-free HTML export of a page or structured database. */
 export function createPageHtml(note: WorkspaceNote, exportedAt = new Date().toISOString()): string {
   const title = note.title.trim() || "Untitled";
-  const content = note.kind === "database" ? databaseTable(note) : note.content;
+  const content = note.kind === "database" ? databaseTable(note) : sanitizeEditorHtml(note.content);
   return `<!doctype html>
 <html lang="en">
 <head>
