@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { parseWorkspaceBackup, searchNotes, type WorkspaceNote } from "./workspace";
+import { parseWorkspaceBackup, searchNotes, type WorkspaceDatabase, type WorkspaceNote } from "./workspace";
 
 const notes: WorkspaceNote[] = [
   { id: "one", title: "Meeting notes", content: "<p>Discuss the launch plan</p>", updatedAt: 10, favorite: true, icon: "📝" },
   { id: "two", title: "Recipes", content: "<p>Tomato soup &amp; bread</p>", updatedAt: 20, favorite: false, icon: "🍲" }
 ];
+
+const database: WorkspaceDatabase = {
+  view: "table",
+  properties: [
+    { id: "title", name: "Name", type: "text" },
+    { id: "status", name: "Status", type: "status", options: ["Not started", "Done"] }
+  ],
+  rows: [{ id: "row-1", cells: { title: "Review draft", status: "Done" } }]
+};
 
 describe("parseWorkspaceBackup", () => {
   it("reads the current versioned backup envelope", () => {
@@ -34,6 +43,16 @@ describe("parseWorkspaceBackup", () => {
       { ...notes[1], parentId: "one" }
     ];
     expect(() => parseWorkspaceBackup(JSON.stringify({ notes: cyclic }))).toThrow(/hierarchy contains a cycle/);
+  });
+
+  it("preserves structured database pages and cell values", () => {
+    const databaseNote: WorkspaceNote = { ...notes[0], kind: "database", database };
+    expect(parseWorkspaceBackup(JSON.stringify({ schemaVersion: 1, notes: [databaseNote] }))).toEqual([databaseNote]);
+  });
+
+  it("rejects database rows that reference unknown properties", () => {
+    const malformed = { ...notes[0], kind: "database", database: { ...database, rows: [{ id: "row-1", cells: { missing: "value" } }] } };
+    expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
   });
 
   it("rejects invalid JSON", () => {
