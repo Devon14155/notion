@@ -6,19 +6,19 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 
 ## Features
 
-- **Rich-text pages:** headings, bold, italic, visible undo/redo controls, code block and divider toolbar actions, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, tables, images, quotes, code blocks, and dividers via Tiptap.
+- **Block-based rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, editable inline tables, image blocks from HTTPS URLs or local raster uploads (512 KB limit), external and internal page links, and blockquotes. Selecting text opens a contextual formatting toolbar. Hovering a content block (or tapping it on touch screens) reveals actions to add a block above, duplicate the block, or delete it. A searchable, categorized `/` command menu inserts text, headings, lists, checklists, tables, images, links, quotes, code blocks, and dividers. Undo/redo remain available through keyboard shortcuts.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
 - **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Duplicate pages:** duplicate any active page or database into an independent record, retaining nested-page placement and deep-copying database rows and property definitions.
 - **Local databases:** create structured database pages with custom text, status, select, date, number, and checkbox properties; add/remove rows and properties, rename properties by double-clicking their headers, filter and sort table views, export structured data to quoted CSV and import CSV rows into existing properties (with typed value validation), switch to a status-grouped board, or see entries in a month calendar when a Date property is configured. Database cells are included in workspace search and JSON backups.
 - **Local persistence:** IndexedDB is the primary on-device store, with a one-time migration from legacy localStorage and a fallback for restricted browsers. Writes are debounced to keep editing responsive. There is no account or cloud sync.
 - **Installable offline app:** includes a web app manifest and service worker that caches the app shell and visited static assets, allowing the workspace to reopen offline after its first successful load on a supported browser. Installation and service workers require a secure context (HTTPS, or localhost for development).
-- **Workspace navigation:** pages, favorites, recently edited pages, and trash.
+- **Workspace navigation:** nested private pages, favorite pages listed in the sidebar, recently edited pages, and trash. Parent breadcrumbs reflect the active page’s hierarchy.
 - **Search:** search page titles, editor text, and structured database cells; database results show a useful row preview.
 - **Portable exports:** export any page or structured database as a standalone HTML document, and export/import databases as CSV. Database HTML exports use escaped table-cell data; page HTML is sanitized with DOMPurify using an explicit tag/attribute allowlist.
 - **Backups:** export all workspace data to JSON and import a validated backup.
 - **Appearance:** light and dark themes, responsive sidebar, and mobile navigation.
-- **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
+- **Keyboard shortcuts:** `Ctrl/Cmd + K` opens search; `Ctrl/Cmd + N` creates a page when focus is not in a text-editing field; `Ctrl/Cmd + Z` undoes and `Ctrl/Cmd + Shift + Z` redoes editor changes; use the arrow keys and `Enter`/`Tab` to navigate slash commands.
 - **Automated checks:** unit tests cover backup validation, structured database data, database-cell search, safe duplication, local persistence fallback, CSV escaping, typed CSV import validation, HTML export, and unsafe HTML payloads; GitHub Actions reports dependency advisories, runs tests, and builds production bundles with separate React/editor chunks.
 
 ## Requirements
@@ -55,13 +55,13 @@ npm run preview
 
 - Notes stay in the browser profile where they were created.
 - Clearing site data or using another browser/device can make local notes unavailable. Offline app-shell caching does not sync or back up note data by itself.
-- Export regular JSON backups using **Export backup**.
+- Export regular JSON backups from the top-right **More page actions** menu → **Export workspace backup**.
 - Import merges pages by ID; records with duplicate IDs, malformed fields, invalid database cell types/options/dates, or cyclic page hierarchies are rejected. Imports are also validated after merging with existing pages so a partial backup cannot introduce a cross-file hierarchy cycle.
 - No synchronization or end-to-end encrypted cloud backup is implemented yet.
 
 ## Current limitations
 
-- Database features are intentionally focused: no formulas, relations, rollups, aggregations, or per-view filters yet. Calendar views require a Date property. Inline editor tables are document content; database pages are separate structured data.
+- Database features are intentionally focused: no formulas, relations, rollups, aggregations, or per-view filters yet. Calendar views require a Date property. Inline editor tables are document content; database pages are separate structured data. Drag-and-drop reordering of editor blocks and sidebar pages is not implemented yet.
 - No multi-device sync, user accounts, collaboration, or server-side storage.
 - The localStorage fallback has limited capacity; IndexedDB is preferred, but neither store replaces regular JSON backups. Local image uploads are limited to 512 KB each.
 - Accessibility, browser compatibility, security review, and end-to-end tests still need further work before production use. The automated npm audit currently reports no known package advisories for the installed dependency tree; this is not a guarantee against future vulnerabilities.
@@ -74,4 +74,4 @@ npm run preview
 - Lucide icons
 - Vitest
 
-The core app has no required paid service or API. Google Fonts are currently loaded by the stylesheet when network access is available; system fonts remain fallback options.
+The core app has no required paid service or API. The interface uses native system fonts and does not require an external font download.
