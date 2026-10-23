@@ -11,9 +11,9 @@ function escapeCsvCell(value: DatabaseCell | undefined): string {
  * Columns follow the database's property order; missing and null values become empty fields.
  */
 export function serializeDatabaseCsv(database: WorkspaceDatabase): string {
-  const records: string[][] = [
+  const records: Array<Array<string | number | boolean | null | undefined>> = [
     database.properties.map((property) => property.name),
-    ...database.rows.map((row) => database.properties.map((property) => escapeCsvCell(row.cells[property.id])))
+    ...database.rows.map((row) => database.properties.map((property) => row.cells[property.id]))
   ];
   return records.map((record) => record.map(escapeCsvCell).join(",")).join("\r\n") + "\r\n";
 }
