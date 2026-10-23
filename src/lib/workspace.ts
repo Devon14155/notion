@@ -54,6 +54,11 @@ function isDatabaseProperty(value: unknown): value is DatabaseProperty {
     return false;
   }
 
+  if (property.options !== undefined &&
+      property.type !== "status" && property.type !== "select") {
+    return false;
+  }
+
   if (Array.isArray(property.options)) {
     const normalizedOptions = property.options.map((option) => (option as string).trim().toLocaleLowerCase());
     if (normalizedOptions.some((option) => option.length === 0) ||
@@ -100,7 +105,7 @@ function isCellValidForProperty(value: DatabaseCell, property: DatabaseProperty)
       if (typeof value !== "string") return false;
       const trimmedValue = value.trim();
       if (trimmedValue === "" || !property.options?.length) return true;
-      return property.options.includes(trimmedValue);
+      return property.options.some((option) => option.trim() === trimmedValue);
     }
   }
 }
@@ -139,14 +144,14 @@ function isWorkspaceNote(value: unknown): value is WorkspaceNote {
   if (!value || typeof value !== "object") return false;
   const note = value as Record<string, unknown>;
   return typeof note.id === "string" &&
-    note.id.length > 0 &&
+    note.id.trim().length > 0 &&
     typeof note.title === "string" &&
     typeof note.content === "string" &&
     typeof note.updatedAt === "number" &&
     Number.isFinite(note.updatedAt) &&
     typeof note.favorite === "boolean" &&
     typeof note.icon === "string" &&
-    (note.parentId === undefined || (typeof note.parentId === "string" && note.parentId.length > 0)) &&
+    (note.parentId === undefined || (typeof note.parentId === "string" && note.parentId.trim().length > 0)) &&
     (note.kind === undefined || note.kind === "page" || note.kind === "database") &&
     (note.database === undefined || isWorkspaceDatabase(note.database)) &&
     (note.kind !== "database" || isWorkspaceDatabase(note.database)) &&
