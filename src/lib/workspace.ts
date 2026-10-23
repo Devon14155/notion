@@ -44,19 +44,65 @@ const databasePropertyTypes = new Set<DatabasePropertyType>(["text", "status", "
 function isDatabaseProperty(value: unknown): value is DatabaseProperty {
   if (!value || typeof value !== "object") return false;
   const property = value as Record<string, unknown>;
-  return typeof property.id === "string" && property.id.length > 0 &&
-    typeof property.name === "string" && property.name.trim().length > 0 &&
-    typeof property.type === "string" && databasePropertyTypes.has(property.type as DatabasePropertyType) &&
-    (property.options === undefined || (Array.isArray(property.options) && property.options.every((option) => typeof option === "string")));
+  if (
+    typeof property.id !== "string" || property.id.trim().length === 0 ||
+    typeof property.name !== "string" || property.name.trim().length === 0 ||
+    typeof property.type !== "string" || !databasePropertyTypes.has(property.type as DatabasePropertyType) ||
+    (property.options !== undefined &&
+      (!Array.isArray(property.options) || !property.options.every((option) => typeof option === "string")))
+  ) {
+    return false;
+  }
+
+  if (Array.isArray(property.options)) {
+    const normalizedOptions = property.options.map((option) => (option as string).trim().toLocaleLowerCase());
+    if (normalizedOptions.some((option) => option.length === 0) ||
+        new Set(normalizedOptions).size !== normalizedOptions.length) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function isDatabaseRow(value: unknown): value is DatabaseRow {
   if (!value || typeof value !== "object") return false;
   const row = value as Record<string, unknown>;
-  if (typeof row.id !== "string" || !row.id || !row.cells || typeof row.cells !== "object" || Array.isArray(row.cells)) return false;
+  if (typeof row.id !== "string" || row.id.trim().length === 0 ||
+      !row.cells || typeof row.cells !== "object" || Array.isArray(row.cells)) return false;
   return Object.values(row.cells as Record<string, unknown>).every((cell) =>
-    cell === null || typeof cell === "string" || typeof cell === "boolean" || (typeof cell === "number" && Number.isFinite(cell))
+    cell === null || typeof cell === "string" || typeof cell === "boolean" ||
+    (typeof cell === "number" && Number.isFinite(cell))
   );
+}
+
+function isValidIsoDate(value: string): boolean {
+  if (value === "") return true;
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function isCellValidForProperty(value: DatabaseCell, property: DatabaseProperty): boolean {
+  if (value === null) return true;
+
+  switch (property.type) {
+    case "text":
+      return typeof value === "string";
+    case "checkbox":
+      return typeof value === "boolean";
+    case "number":
+      return typeof value === "number" && Number.isFinite(value);
+    case "date":
+      return typeof value === "string" && isValidIsoDate(value);
+    case "status":
+    case "select": {
+      if (typeof value !== "string") return false;
+      const trimmedValue = value.trim();
+      if (trimmedValue === "" || !property.options?.length) return true;
+      return property.options.includes(trimmedValue);
+    }
+  }
 }
 
 function isWorkspaceDatabase(value: unknown): value is WorkspaceDatabase {
@@ -67,15 +113,24 @@ function isWorkspaceDatabase(value: unknown): value is WorkspaceDatabase {
       (database.view !== "table" && database.view !== "board" && database.view !== "calendar")) return false;
 
   const propertyIds = new Set<string>();
+  const propertyNames = new Set<string>();
   for (const property of database.properties) {
-    if (propertyIds.has(property.id)) return false;
+    const normalizedName = property.name.trim().toLocaleLowerCase();
+    if (propertyIds.has(property.id) || propertyNames.has(normalizedName)) return false;
     propertyIds.add(property.id);
+    propertyNames.add(normalizedName);
   }
+
+  const propertiesById = new Map(database.properties.map((property) => [property.id, property]));
   const rowIds = new Set<string>();
   for (const row of database.rows) {
     if (rowIds.has(row.id)) return false;
     rowIds.add(row.id);
-    if (Object.keys(row.cells).some((propertyId) => !propertyIds.has(propertyId))) return false;
+
+    for (const [propertyId, cell] of Object.entries(row.cells)) {
+      const property = propertiesById.get(propertyId);
+      if (!property || !isCellValidForProperty(cell as DatabaseCell, property)) return false;
+    }
   }
   return true;
 }
