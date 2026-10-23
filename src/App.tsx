@@ -16,7 +16,7 @@ import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
   PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy
 } from "lucide-react";
 
 type Note = {
@@ -245,6 +245,35 @@ function App() {
     }
   };
 
+  const duplicateActive = () => {
+    if (!activeNote) return;
+    const duplicate: Note = {
+      ...activeNote,
+      id: crypto.randomUUID(),
+      title: `${activeNote.title.trim() || "Untitled"} (copy)`,
+      updatedAt: Date.now(),
+      favorite: false,
+      trashed: false,
+      ...(activeNote.database ? {
+        database: {
+          ...activeNote.database,
+          properties: activeNote.database.properties.map((property) => ({
+            ...property,
+            ...(property.options ? { options: [...property.options] } : {})
+          })),
+          rows: activeNote.database.rows.map((row) => ({ ...row, cells: { ...row.cells } }))
+        }
+      } : {})
+    };
+    setNotes((prev) => [duplicate, ...prev]);
+    setActiveId(duplicate.id);
+    setSection("all");
+    setQuery("");
+    if (duplicate.parentId) setExpandedIds((prev) => new Set(prev).add(duplicate.parentId!));
+    if (window.innerWidth < 760) setMobileMenu(false);
+    setToast(activeNote.kind === "database" ? "Database duplicated" : "Page duplicated");
+  };
+
   const createNote = (parentId?: string) => {
     const note: Note = { id: crypto.randomUUID(), title: "Untitled", content: "<p></p>", updatedAt: Date.now(), favorite: false, icon: "📄", ...(parentId ? { parentId } : {}) };
     setNotes((prev) => [note, ...prev]);
@@ -415,8 +444,8 @@ function App() {
         </div>}
 
         <div className="page-scroll">
-          {activeNote ? (activeNote.kind === "database" && activeNote.database && section !== "trash" ? <DatabaseView title={activeNote.title} icon={activeNote.icon} onIconChange={choosePageIcon} favorite={activeNote.favorite} updatedAt={activeNote.updatedAt} database={activeNote.database} onRename={renameActive} onDatabaseChange={updateActiveDatabase} onToggleFavorite={toggleFavorite} onTrash={moveToTrash} /> : <article className="document">
-            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> Saved locally</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button><button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
+          {activeNote ? (activeNote.kind === "database" && activeNote.database && section !== "trash" ? <DatabaseView title={activeNote.title} icon={activeNote.icon} onIconChange={choosePageIcon} favorite={activeNote.favorite} updatedAt={activeNote.updatedAt} database={activeNote.database} onRename={renameActive} onDatabaseChange={updateActiveDatabase} onToggleFavorite={toggleFavorite} onDuplicate={duplicateActive} onTrash={moveToTrash} /> : <article className="document">
+            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> Saved locally</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button>{section !== "trash" && <button className="icon-button" onClick={duplicateActive} aria-label="Duplicate page" title="Duplicate page"><Copy size={15}/></button>}<button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
             <input className="document-title" value={activeNote.title} onChange={e => renameActive(e.target.value)} aria-label="Page title" placeholder="Untitled"/>
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
             {section === "trash" && <div className="trash-banner"><Trash2 size={16}/> This page is in the trash. <button onClick={() => restoreNote(activeNote.id)}>Restore page</button><button className="permanent-delete" onClick={() => permanentlyDelete(activeNote.id)}>Delete permanently</button></div>}
