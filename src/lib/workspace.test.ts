@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase, type WorkspaceNote } from "./workspace";
+import { duplicateWorkspaceNote, mergeWorkspaceNotes, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase, type WorkspaceNote } from "./workspace";
 
 const notes: WorkspaceNote[] = [
   { id: "one", title: "Meeting notes", content: "<p>Discuss the launch plan</p>", updatedAt: 10, favorite: true, icon: "📝" },
@@ -156,6 +156,32 @@ describe("parseWorkspaceBackup", () => {
 
   it("rejects invalid JSON", () => {
     expect(() => parseWorkspaceBackup("{")).toThrow();
+  });
+});
+
+describe("mergeWorkspaceNotes", () => {
+  it("replaces matching page IDs and keeps unrelated existing pages", () => {
+    const incoming = [{ ...notes[0], title: "Updated meeting notes" }];
+    expect(mergeWorkspaceNotes(notes, incoming)).toEqual([
+      { ...notes[0], title: "Updated meeting notes" },
+      notes[1]
+    ]);
+  });
+
+  it("rejects cycles introduced across an import and existing pages", () => {
+    const existing: WorkspaceNote[] = [
+      { ...notes[0] },
+      { ...notes[1], parentId: "one" }
+    ];
+    const partialBackup = [{ ...notes[0], parentId: "two" }];
+    expect(() => mergeWorkspaceNotes(existing, partialBackup)).toThrow(/hierarchy contains a cycle/);
+  });
+
+  it("does not mutate the existing workspace when validation fails", () => {
+    const existing = notes.map((note) => ({ ...note }));
+    const partialBackup = [{ ...notes[0], parentId: "two" }];
+    expect(() => mergeWorkspaceNotes(existing, partialBackup)).toThrow();
+    expect(existing).toEqual(notes);
   });
 });
 
