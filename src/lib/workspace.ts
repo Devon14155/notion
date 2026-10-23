@@ -129,7 +129,7 @@ export function parseWorkspaceBackup(raw: string): WorkspaceNote[] {
   return candidate;
 }
 
-export function searchNotes<T extends Pick<WorkspaceNote, "title" | "content">>(
+export function searchNotes<T extends Pick<WorkspaceNote, "title" | "content"> & Partial<Pick<WorkspaceNote, "database">>>(
   notes: T[],
   query: string
 ): T[] {
@@ -146,7 +146,11 @@ export function searchNotes<T extends Pick<WorkspaceNote, "title" | "content">>(
       .replace(/&gt;/gi, ">")
       .replace(/&quot;/gi, '"')
       .replace(/&#39;|&apos;/gi, "'");
+    const databaseText = note.database
+      ? note.database.rows.flatMap((row) => Object.values(row.cells)).map((value) => value === null ? "" : String(value)).join(" ")
+      : "";
     return note.title.toLocaleLowerCase().includes(needle) ||
-      plainText.toLocaleLowerCase().includes(needle);
+      plainText.toLocaleLowerCase().includes(needle) ||
+      databaseText.toLocaleLowerCase().includes(needle);
   });
 }
