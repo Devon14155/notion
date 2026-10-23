@@ -1,3 +1,24 @@
+export type DatabasePropertyType = "text" | "status" | "date" | "number" | "checkbox" | "select";
+export type DatabaseCell = string | number | boolean | null;
+
+export type DatabaseProperty = {
+  id: string;
+  name: string;
+  type: DatabasePropertyType;
+  options?: string[];
+};
+
+export type DatabaseRow = {
+  id: string;
+  cells: Record<string, DatabaseCell>;
+};
+
+export type WorkspaceDatabase = {
+  properties: DatabaseProperty[];
+  rows: DatabaseRow[];
+  view: "table" | "board";
+};
+
 export type WorkspaceNote = {
   id: string;
   title: string;
@@ -6,6 +27,8 @@ export type WorkspaceNote = {
   favorite: boolean;
   icon: string;
   parentId?: string;
+  kind?: "page" | "database";
+  database?: WorkspaceDatabase;
   trashed?: boolean;
 };
 
@@ -15,6 +38,47 @@ export type WorkspaceBackup = {
   exportedAt?: string;
   notes: WorkspaceNote[];
 };
+
+const databasePropertyTypes = new Set<DatabasePropertyType>(["text", "status", "date", "number", "checkbox", "select"]);
+
+function isDatabaseProperty(value: unknown): value is DatabaseProperty {
+  if (!value || typeof value !== "object") return false;
+  const property = value as Record<string, unknown>;
+  return typeof property.id === "string" && property.id.length > 0 &&
+    typeof property.name === "string" && property.name.trim().length > 0 &&
+    typeof property.type === "string" && databasePropertyTypes.has(property.type as DatabasePropertyType) &&
+    (property.options === undefined || (Array.isArray(property.options) && property.options.every((option) => typeof option === "string")));
+}
+
+function isDatabaseRow(value: unknown): value is DatabaseRow {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  if (typeof row.id !== "string" || !row.id || !row.cells || typeof row.cells !== "object" || Array.isArray(row.cells)) return false;
+  return Object.values(row.cells as Record<string, unknown>).every((cell) =>
+    cell === null || typeof cell === "string" || typeof cell === "boolean" || (typeof cell === "number" && Number.isFinite(cell))
+  );
+}
+
+function isWorkspaceDatabase(value: unknown): value is WorkspaceDatabase {
+  if (!value || typeof value !== "object") return false;
+  const database = value as Record<string, unknown>;
+  if (!Array.isArray(database.properties) || !database.properties.every(isDatabaseProperty) ||
+      !Array.isArray(database.rows) || !database.rows.every(isDatabaseRow) ||
+      (database.view !== "table" && database.view !== "board")) return false;
+
+  const propertyIds = new Set<string>();
+  for (const property of database.properties) {
+    if (propertyIds.has(property.id)) return false;
+    propertyIds.add(property.id);
+  }
+  const rowIds = new Set<string>();
+  for (const row of database.rows) {
+    if (rowIds.has(row.id)) return false;
+    rowIds.add(row.id);
+    if (Object.keys(row.cells).some((propertyId) => !propertyIds.has(propertyId))) return false;
+  }
+  return true;
+}
 
 function isWorkspaceNote(value: unknown): value is WorkspaceNote {
   if (!value || typeof value !== "object") return false;
@@ -28,6 +92,9 @@ function isWorkspaceNote(value: unknown): value is WorkspaceNote {
     typeof note.favorite === "boolean" &&
     typeof note.icon === "string" &&
     (note.parentId === undefined || (typeof note.parentId === "string" && note.parentId.length > 0)) &&
+    (note.kind === undefined || note.kind === "page" || note.kind === "database") &&
+    (note.database === undefined || isWorkspaceDatabase(note.database)) &&
+    (note.kind !== "database" || isWorkspaceDatabase(note.database)) &&
     (note.trashed === undefined || typeof note.trashed === "boolean");
 }
 
