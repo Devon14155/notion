@@ -8,6 +8,7 @@ A clean, responsive workspace for notes and ideas. The core application is desig
 
 - **Rich-text pages:** headings, bold, italic, ordered and unordered lists, interactive task checklists, blockquotes, plus a searchable `/` command menu for text, headings, lists, checklists, quotes, code blocks, and dividers via Tiptap.
 - **Nested pages:** create subpages from any page row, expand or collapse page branches, and retain parent/child relationships in backups.
+- **Page identity:** choose from a built-in emoji icon palette to make pages easier to recognize.
 - **Local persistence:** page content is stored in this browser's local storage. There is no account or cloud sync.
 - **Workspace navigation:** pages, favorites, recently edited pages, and trash.
 - **Search:** search page titles and editor text.
