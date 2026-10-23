@@ -7,7 +7,7 @@ import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
+import { duplicateWorkspaceNote, mergeWorkspaceNotes, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
 import { loadPersistedWorkspace, savePersistedWorkspace, type StorageBackend } from "./lib/persistence";
 import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
@@ -559,11 +559,7 @@ function App() {
     if (!file) return;
     try {
       const incoming = parseWorkspaceBackup(await file.text());
-      setNotes((prev) => {
-        const byId = new Map(prev.map((n) => [n.id, n]));
-        incoming.forEach((n: Note) => byId.set(n.id, n));
-        return [...byId.values()];
-      });
+      setNotes((prev) => mergeWorkspaceNotes(prev, incoming) as Note[]);
       setToast("Backup imported");
     } catch { setToast("Could not import: invalid backup file"); }
   };
