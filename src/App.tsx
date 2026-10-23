@@ -541,6 +541,7 @@ function App() {
   const chooseSection = (value: typeof section) => { setSection(value); setQuery(""); if (value === "trash") { setActiveId(notes.find(n => n.trashed)?.id ?? ""); } else if (value === "favorites") { setActiveId(notes.find(n => n.favorite && !n.trashed)?.id ?? ""); } else { setActiveId(notes.find(n => !n.trashed)?.id ?? ""); } };
 
   const filteredSlashCommands = slashMenu ? slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(slashMenu.query)) : [];
+  const linkablePages = notes.filter((note) => !note.trashed && note.id !== activeNote?.id && (note.title || "Untitled").toLocaleLowerCase().includes(pageLinkQuery.trim().toLocaleLowerCase())).slice(0, 30);
 
   if (!storageReady) {
     return <div className="workspace-loading" role="status" aria-live="polite"><span className="workspace-loading-mark">✳</span><strong>Opening your workspace</strong><span>Reading your locally saved pages…</span></div>;
@@ -621,6 +622,17 @@ function App() {
               <button className={editor?.isActive("table") ? "tool-active" : ""} onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} aria-label="Insert table"><Table2 size={15}/></button>
               <button type="button" onClick={() => imageFileInputRef.current?.click()} aria-label="Insert local image" title="Insert local image (512 KB max)"><ImagePlus size={15}/></button>
               <input ref={imageFileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(event) => { handleImageFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+              <div className="page-link-picker-wrap">
+                <button type="button" className={pageLinkPickerOpen || editor?.isActive("link") ? "tool-active" : ""} aria-label="Insert link" aria-expanded={pageLinkPickerOpen} onClick={() => { setPageLinkPickerOpen((value) => !value); setPageLinkQuery(""); }}><Link2 size={15}/></button>
+                {pageLinkPickerOpen && <div className="page-link-picker" role="dialog" aria-label="Insert link">
+                  <label className="page-link-search"><Search size={14}/><input autoFocus value={pageLinkQuery} onChange={(event) => setPageLinkQuery(event.target.value)} placeholder="Find a page…" aria-label="Find a page to link"/></label>
+                  <button className="page-link-external" onMouseDown={(event) => event.preventDefault()} onClick={insertExternalLink}><ExternalLink size={14}/><span>Link to web address…</span></button>
+                  <div className="page-link-options">
+                    {linkablePages.map((page) => <button key={page.id} onMouseDown={(event) => event.preventDefault()} onClick={() => insertPageLink(page)}><span className="page-link-picker-icon">{page.icon || "📄"}</span><span className="page-link-picker-copy"><strong>{page.title || "Untitled"}</strong><small>{page.kind === "database" ? "Database" : page.parentId ? "Subpage" : "Page"}</small></span></button>)}
+                    {linkablePages.length === 0 && <p>{pageLinkQuery ? "No matching pages." : "Create another page to link to it."}</p>}
+                  </div>
+                </div>}
+              </div>
               <button className={editor?.isActive("blockquote") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBlockquote().run()} aria-label="Quote"><Quote size={15}/></button>
             </div>
             <div className="editor-area" ref={editorAreaRef}>
