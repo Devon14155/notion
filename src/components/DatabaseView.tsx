@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X,
+  Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy,
   ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal
 } from "lucide-react";
 import type {
@@ -17,6 +17,7 @@ type DatabaseViewProps = {
   onRename: (title: string) => void;
   onDatabaseChange: (database: WorkspaceDatabase) => void;
   onToggleFavorite: () => void;
+  onDuplicate: () => void;
   onTrash: () => void;
 };
 
@@ -55,6 +56,7 @@ export default function DatabaseView({
   onRename,
   onDatabaseChange,
   onToggleFavorite,
+  onDuplicate,
   onTrash
 }: DatabaseViewProps) {
   const [filter, setFilter] = useState("");
@@ -210,6 +212,7 @@ export default function DatabaseView({
         <div className="page-actions">
           <span className="saved-label"><span className="status-dot" /> Saved locally</span>
           <button className={`icon-button ${favorite ? "is-favorite" : ""}`} onClick={onToggleFavorite} aria-label={favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={favorite ? "currentColor" : "none"} /></button>
+          <button className="icon-button" onClick={onDuplicate} aria-label="Duplicate database" title="Duplicate database"><Copy size={15} /></button>
           <button className="icon-button" onClick={onTrash} aria-label="Move database to trash"><Trash2 size={16} /></button>
         </div>
       </div>
