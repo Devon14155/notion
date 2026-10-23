@@ -15,9 +15,9 @@ import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
 import {
   Search, Plus, ChevronDown, ChevronRight, Home, Inbox, Settings2,
-  PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal,
+  PanelLeftClose, PanelLeft, FileText, Star, Clock3, Trash2, MoreHorizontal, GripVertical,
   CheckSquare, CalendarDays, LayoutGrid, BookOpen, Command, Sun, Moon,
-  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, ImagePlus, Link2, ExternalLink, Download, Upload, Undo2, Redo2, Code2, Minus
+  Bold, Italic, List, ListOrdered, Heading2, Quote, SearchX, X, Table2, Copy, Link2, ExternalLink, Download, Upload, Code2
 } from "lucide-react";
 
 type Note = {
@@ -43,6 +43,7 @@ const slashCommands = [
   { id: "taskList", label: "Checklist", description: "Add tasks you can check off", keywords: "todo tasks checkbox to do" },
   { id: "table", label: "Table", description: "Insert an editable 3 × 3 table", keywords: "grid rows columns database" },
   { id: "image", label: "Image", description: "Insert an image from a URL", keywords: "picture photo illustration media" },
+  { id: "link", label: "Link", description: "Link to a web address", keywords: "url hyperlink web address" },
   { id: "quote", label: "Quote", description: "Highlight a quotation", keywords: "blockquote" },
   { id: "codeBlock", label: "Code block", description: "Display code with formatting", keywords: "code programming" },
   { id: "divider", label: "Divider", description: "Separate sections visually", keywords: "line separator horizontal rule" },
@@ -114,6 +115,10 @@ function App() {
   const editorAreaRef = useRef<HTMLDivElement>(null);
   const imageFileInputRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState("");
+  const [blockControls, setBlockControls] = useState<{ pos: number; top: number } | null>(null);
+  const [blockMenuOpen, setBlockMenuOpen] = useState(false);
+  const [selectionToolbar, setSelectionToolbar] = useState<{ left: number; top: number } | null>(null);
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem("notion-workspace-theme-v1", dark ? "dark" : "light"); }
@@ -253,6 +258,53 @@ function App() {
     setSlashMenu(next);
   };
 
+  const updateSelectionToolbar = (current: Editor) => {
+    const selection = current.state.selection;
+    if (selection.empty) {
+      setSelectionToolbar(null);
+      return;
+    }
+    try {
+      const start = current.view.coordsAtPos(selection.from);
+      const end = current.view.coordsAtPos(selection.to);
+      const toolbarWidth = 330;
+      const center = (start.left + end.left) / 2;
+      const left = Math.max(8, Math.min(window.innerWidth - toolbarWidth - 8, center - toolbarWidth / 2));
+      const top = Math.max(8, start.top - 46);
+      setSelectionToolbar((previous) => previous && Math.abs(previous.left - left) < 1 && Math.abs(previous.top - top) < 1
+        ? previous
+        : { left, top });
+    } catch {
+      setSelectionToolbar(null);
+    }
+  };
+
+  const duplicateEditorBlock = () => {
+    if (!editor || !blockControls) return;
+    const node = editor.state.doc.nodeAt(blockControls.pos);
+    if (!node) {
+      setBlockMenuOpen(false);
+      return;
+    }
+    editor.chain().focus().insertContentAt(blockControls.pos + node.nodeSize, node.toJSON()).run();
+    setBlockMenuOpen(false);
+    setBlockControls(null);
+    setToast("Block duplicated");
+  };
+
+  const deleteEditorBlock = () => {
+    if (!editor || !blockControls) return;
+    const node = editor.state.doc.nodeAt(blockControls.pos);
+    if (!node) {
+      setBlockMenuOpen(false);
+      return;
+    }
+    editor.chain().focus().deleteRange({ from: blockControls.pos, to: blockControls.pos + node.nodeSize }).run();
+    setBlockMenuOpen(false);
+    setBlockControls(null);
+    setToast("Block deleted");
+  };
+
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
     extensions: [StarterKit, TaskList, TaskItem.configure({ nested: true }), Table.configure({ resizable: true }), TableRow, TableHeader, TableCell, Image.configure({ allowBase64: true, HTMLAttributes: { class: "page-image", loading: "lazy" } }), Link.configure({ openOnClick: false, autolink: true, defaultProtocol: "https", HTMLAttributes: { target: "_blank", rel: "noopener noreferrer nofollow" } }), Placeholder.configure({ placeholder: "Start writing, or type / for commands…" })],
@@ -262,7 +314,7 @@ function App() {
       setNotes((prev) => prev.map((n) => n.id === activeId ? { ...n, content, updatedAt: Date.now() } : n));
       updateSlashMenu(current);
     },
-    onSelectionUpdate: ({ editor: current }) => updateSlashMenu(current),
+    onSelectionUpdate: ({ editor: current }) => { updateSlashMenu(current); updateSelectionToolbar(current); },
     editorProps: {
       attributes: { class: "tiptap", "aria-label": "Page content editor" },
       handleClick: (_view, _position, event) => {
@@ -320,6 +372,9 @@ function App() {
     setSlashMenu(null);
     setIconPickerOpen(false);
     setPageLinkPickerOpen(false);
+    setBlockMenuOpen(false);
+    setBlockControls(null);
+    setSelectionToolbar(null);
     setPageLinkQuery("");
     if (editor && activeNote) {
       const current = editor.getHTML();
@@ -445,6 +500,7 @@ function App() {
       case "taskList": chain.toggleTaskList().run(); break;
       case "table": chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
       case "image": chain.run(); insertImageFromUrl(); break;
+      case "link": chain.run(); insertExternalLink(); break;
       case "quote": chain.toggleBlockquote().run(); break;
       case "codeBlock": chain.setCodeBlock().run(); break;
       case "divider": chain.setHorizontalRule().run(); break;
@@ -584,6 +640,19 @@ function App() {
 
   const filteredSlashCommands = slashMenu ? slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(slashMenu.query)) : [];
   const linkablePages = notes.filter((note) => !note.trashed && note.id !== activeNote?.id && (note.title || "Untitled").toLocaleLowerCase().includes(pageLinkQuery.trim().toLocaleLowerCase())).slice(0, 30);
+  const pageBreadcrumbs = useMemo(() => {
+    const path: Note[] = [];
+    const seen = new Set<string>();
+    let current = activeNote ?? null;
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      path.unshift(current);
+      current = current.parentId
+        ? notes.find((note) => note.id === current?.parentId && !note.trashed) ?? null
+        : null;
+    }
+    return path;
+  }, [activeNote, notes]);
 
   if (!storageReady) {
     return <div className="workspace-loading" role="status" aria-live="polite"><span className="workspace-loading-mark">✳</span><strong>Opening your workspace</strong><span>Reading your locally saved pages…</span></div>;
@@ -629,13 +698,22 @@ function App() {
           <div className="breadcrumbs">
             <button className="icon-button mobile-menu-button" aria-label="Open navigation" onClick={() => setMobileMenu(true)}><PanelLeft size={17}/></button>
             <button className="icon-button desktop-sidebar-toggle" aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"} onClick={() => setSidebarOpen(v => !v)}>{sidebarOpen ? <PanelLeftClose size={17}/> : <PanelLeft size={17}/>}</button>
-            <span className="crumb-muted">Private</span><ChevronRight size={13}/><span className="crumb-current">{activeNote?.title || (section === "trash" ? "Trash" : "Your pages")}</span>
+            {pageBreadcrumbs.length ? pageBreadcrumbs.map((crumb, index) => <span className="breadcrumb-item" key={crumb.id}>{index > 0 && <ChevronRight size={13}/>} {index === pageBreadcrumbs.length - 1 ? <span className="crumb-current">{crumb.title || "Untitled"}</span> : <button className="breadcrumb-parent" onClick={() => { setActiveId(crumb.id); setSection("all"); }}>{crumb.title || "Untitled"}</button>}</span>) : <span className="crumb-current">{section === "trash" ? "Trash" : "Your pages"}</span>}
           </div>
           <div className="topbar-actions">
-            <button className="icon-button" aria-label="Toggle color theme" onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>}</button>
-            <button className="icon-button" aria-label="Search pages" onClick={() => setSearchOpen(true)}><Search size={16}/></button>
-            <button className="share-button" onClick={exportNotes}>Export backup <ChevronDown size={14}/></button>
-            <button className="icon-button more-button" aria-label="More options" onClick={() => document.getElementById("import-file")?.click()}><MoreHorizontal size={18}/></button>
+            <button className="icon-button" aria-label="Toggle color theme" title={dark ? "Switch to light mode" : "Switch to dark mode"} onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>}</button>
+            <button className="icon-button" aria-label="Search pages" title="Search" onClick={() => setSearchOpen(true)}><Search size={16}/></button>
+            <button className={`icon-button topbar-favorite ${activeNote?.favorite ? "is-favorite" : ""}`} aria-label={activeNote?.favorite ? "Remove from favorites" : "Add to favorites"} title={activeNote?.favorite ? "Remove from favorites" : "Add to favorites"} disabled={!activeNote || section === "trash"} onClick={toggleFavorite}><Star size={16} fill={activeNote?.favorite ? "currentColor" : "none"}/></button>
+            <div className="workspace-menu-wrap">
+              <button className="icon-button more-button" aria-label="More page actions" aria-expanded={workspaceMenuOpen} title="More page actions" onClick={() => setWorkspaceMenuOpen(value => !value)}><MoreHorizontal size={18}/></button>
+              {workspaceMenuOpen && <div className="workspace-menu" role="menu" aria-label="More page actions">
+                <button role="menuitem" onClick={() => { exportActivePage(); setWorkspaceMenuOpen(false); }} disabled={!activeNote || section === "trash"}><Download size={14}/> Export page as HTML</button>
+                <button role="menuitem" onClick={() => { exportNotes(); setWorkspaceMenuOpen(false); }}><Download size={14}/> Export workspace backup</button>
+                <button role="menuitem" onClick={() => { document.getElementById("import-file")?.click(); setWorkspaceMenuOpen(false); }}><Upload size={14}/> Import workspace backup</button>
+                <span className="workspace-menu-divider"/>
+                <button role="menuitem" onClick={() => { setSettingsOpen(true); setWorkspaceMenuOpen(false); }}><Settings2 size={14}/> Settings</button>
+              </div>}
+            </div>
             <input id="import-file" type="file" accept="application/json,.json" hidden onChange={e => { void importNotes(e.target.files?.[0]); e.currentTarget.value = ""; }}/>
           </div>
         </header>
@@ -689,40 +767,41 @@ function App() {
         </div>}
         <div className="page-scroll">
           {activeNote ? (activeNote.kind === "database" && activeNote.database && section !== "trash" ? <DatabaseView title={activeNote.title} icon={activeNote.icon} onIconChange={choosePageIcon} favorite={activeNote.favorite} updatedAt={activeNote.updatedAt} database={activeNote.database} onMessage={setToast} onRename={renameActive} onDatabaseChange={updateActiveDatabase} onExportHtml={exportActivePage} onToggleFavorite={toggleFavorite} onDuplicate={duplicateActive} onTrash={moveToTrash} /> : <article className="document">
-            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> {storageBackend === "indexeddb" ? "Saved on this device" : "Saved in browser storage"}</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button>{section !== "trash" && <button className="icon-button" onClick={exportActivePage} aria-label="Export page as HTML" title="Export page as HTML"><Download size={15}/></button>}{section !== "trash" && <button className="icon-button" onClick={duplicateActive} aria-label="Duplicate page" title="Duplicate page"><Copy size={15}/></button>}{section !== "trash" && <button className="icon-button" aria-label="Move page to trash" title="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button>}</div></div>
+            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> {storageBackend === "indexeddb" ? "Saved on this device" : "Saved in browser storage"}</span>{section !== "trash" && <button className="icon-button" onClick={exportActivePage} aria-label="Export page as HTML" title="Export page as HTML"><Download size={15}/></button>}{section !== "trash" && <button className="icon-button" onClick={duplicateActive} aria-label="Duplicate page" title="Duplicate page"><Copy size={15}/></button>}{section !== "trash" && <button className="icon-button" aria-label="Move page to trash" title="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button>}</div></div>
             <input className="document-title" value={activeNote.title} onChange={e => renameActive(e.target.value)} aria-label="Page title" placeholder="Untitled"/>
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
             {section === "trash" && <div className="trash-banner"><Trash2 size={16}/> This page is in the trash. <button onClick={() => restoreNote(activeNote.id)}>Restore page</button><button className="permanent-delete" onClick={() => permanentlyDelete(activeNote.id)}>Delete permanently</button></div>}
-            <div className="editor-toolbar" role="toolbar" aria-label="Text formatting">
-              <button type="button" className="editor-history-button" disabled={!editor?.can().chain().focus().undo().run()} onClick={() => editor?.chain().focus().undo().run()} aria-label="Undo" title="Undo (Ctrl/⌘ Z)"><Undo2 size={15}/></button>
-              <button type="button" className="editor-history-button" disabled={!editor?.can().chain().focus().redo().run()} onClick={() => editor?.chain().focus().redo().run()} aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)"><Redo2 size={15}/></button>
-              <span className="toolbar-separator"/>
-              <button className={editor?.isActive("bold") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBold().run()} aria-label="Bold"><Bold size={15}/></button>
-              <button className={editor?.isActive("italic") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleItalic().run()} aria-label="Italic"><Italic size={15}/></button>
-              <span className="toolbar-separator"/>
-              <button className={editor?.isActive("heading", { level: 2 }) ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} aria-label="Heading"><Heading2 size={16}/></button>
-              <button className={editor?.isActive("bulletList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBulletList().run()} aria-label="Bulleted list"><List size={16}/></button>
-              <button className={editor?.isActive("orderedList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleOrderedList().run()} aria-label="Numbered list"><ListOrdered size={16}/></button>
-              <button className={editor?.isActive("taskList") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleTaskList().run()} aria-label="Checklist"><CheckSquare size={15}/></button>
-              <button className={editor?.isActive("table") ? "tool-active" : ""} onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} aria-label="Insert table"><Table2 size={15}/></button>
-              <button type="button" onClick={() => imageFileInputRef.current?.click()} aria-label="Insert local image" title="Insert local image (512 KB max)"><ImagePlus size={15}/></button>
-              <input ref={imageFileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(event) => { handleImageFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
-              <div className="page-link-picker-wrap">
-                <button type="button" className={pageLinkPickerOpen || editor?.isActive("link") ? "tool-active" : ""} aria-label="Insert link" aria-expanded={pageLinkPickerOpen} onClick={() => { setPageLinkPickerOpen((value) => !value); setPageLinkQuery(""); }}><Link2 size={15}/></button>
-                {pageLinkPickerOpen && <div className="page-link-picker" role="dialog" aria-label="Insert link">
-                  <label className="page-link-search"><Search size={14}/><input autoFocus value={pageLinkQuery} onChange={(event) => setPageLinkQuery(event.target.value)} placeholder="Find a page…" aria-label="Find a page to link"/></label>
-                  <button className="page-link-external" onMouseDown={(event) => event.preventDefault()} onClick={insertExternalLink}><ExternalLink size={14}/><span>Link to web address…</span></button>
-                  <div className="page-link-options">
-                    {linkablePages.map((page) => <button key={page.id} onMouseDown={(event) => event.preventDefault()} onClick={() => insertPageLink(page)}><span className="page-link-picker-icon">{page.icon || "📄"}</span><span className="page-link-picker-copy"><strong>{page.title || "Untitled"}</strong><small>{page.kind === "database" ? "Database" : page.parentId ? "Subpage" : "Page"}</small></span></button>)}
-                    {linkablePages.length === 0 && <p>{pageLinkQuery ? "No matching pages." : "Create another page to link to it."}</p>}
-                  </div>
-                </div>}
-              </div>
-              <button className={editor?.isActive("blockquote") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleBlockquote().run()} aria-label="Quote"><Quote size={15}/></button>
-              <button className={editor?.isActive("codeBlock") ? "tool-active" : ""} onClick={() => editor?.chain().focus().toggleCodeBlock().run()} aria-label="Code block" title="Code block"><Code2 size={15}/></button>
-              <button type="button" onClick={() => editor?.chain().focus().setHorizontalRule().run()} aria-label="Insert divider" title="Insert divider"><Minus size={15}/></button>
-            </div>
-            <div className="editor-area" ref={editorAreaRef}>
+            <div className="editor-area" ref={editorAreaRef}
+              onMouseMove={(event) => {
+                if (!editor || blockMenuOpen) return;
+                const target = event.target;
+                if (!(target instanceof Element) || target.closest(".editor-block-handle, .editor-block-menu")) return;
+                const block = target.closest<HTMLElement>(".tiptap > *");
+                if (!block) { setBlockControls(null); return; }
+                try {
+                  const domPos = editor.view.posAtDOM(block, 0);
+                  const resolved = editor.state.doc.resolve(domPos);
+                  if (resolved.depth === 0) return;
+                  const pos = resolved.before(resolved.depth);
+                  const top = Math.max(0, block.getBoundingClientRect().top - event.currentTarget.getBoundingClientRect().top);
+                  setBlockControls(previous => previous?.pos === pos && Math.abs(previous.top - top) < 1 ? previous : { pos, top });
+                } catch { setBlockControls(null); }
+              }}
+              onMouseLeave={() => { if (!blockMenuOpen) setBlockControls(null); }}
+            >
+              {blockControls && <button type="button" className="editor-block-handle" style={{ top: blockControls.top }} aria-label="Open block actions" title="Block actions"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  if (!editor || !blockControls) return;
+                  editor.chain().focus().setNodeSelection(blockControls.pos).run();
+                  setSelectionToolbar(null);
+                  setBlockMenuOpen(value => !value);
+                }}><GripVertical size={16}/></button>}
+              {blockMenuOpen && blockControls && <div className="editor-block-menu" style={{ top: blockControls.top + 26 }} role="menu" aria-label="Block actions">
+                <button role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={duplicateEditorBlock}><Copy size={14}/> Duplicate block</button>
+                <button role="menuitem" onMouseDown={(event) => event.preventDefault()} onClick={deleteEditorBlock}><Trash2 size={14}/> Delete block</button>
+              </div>}
+
               <EditorContent editor={editor}/>
               {slashMenu && filteredSlashCommands.length > 0 && <div className="slash-command-menu" role="listbox" aria-label="Slash commands" style={{ left: slashMenu.left, top: slashMenu.top }}>
                 {filteredSlashCommands.map((command, index) => <button key={command.id} type="button" role="option" aria-selected={slashMenu.selectedIndex === index} className={`slash-command-option ${slashMenu.selectedIndex === index ? "selected" : ""}`} onMouseDown={event => event.preventDefault()} onClick={() => executeSlashCommand(command.id)}>
@@ -733,7 +812,28 @@ function App() {
               </div>}
               {slashMenu && filteredSlashCommands.length === 0 && <div className="slash-command-menu slash-command-empty" style={{ left: slashMenu.left, top: slashMenu.top }}>No matching commands</div>}
             </div>
-            <div className="document-end"><span>✳</span><span>Made for your thoughts.</span></div>
+            {selectionToolbar && editor && !editor.state.selection.empty && <div className="editor-toolbar floating-editor-toolbar" role="toolbar" aria-label="Text formatting" style={{ left: selectionToolbar.left, top: selectionToolbar.top }} onMouseDown={(event) => event.preventDefault()}>
+              <button className={editor.isActive("bold") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleBold().run()} aria-label="Bold" title="Bold"><Bold size={15}/></button>
+              <button className={editor.isActive("italic") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleItalic().run()} aria-label="Italic" title="Italic"><Italic size={15}/></button>
+              <span className="toolbar-separator"/>
+              <button className={editor.isActive("heading", { level: 2 }) ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} aria-label="Heading 2" title="Heading 2"><Heading2 size={16}/></button>
+              <button className={editor.isActive("bulletList") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleBulletList().run()} aria-label="Bulleted list" title="Bulleted list"><List size={16}/></button>
+              <button className={editor.isActive("orderedList") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleOrderedList().run()} aria-label="Numbered list" title="Numbered list"><ListOrdered size={16}/></button>
+              <button className={editor.isActive("taskList") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleTaskList().run()} aria-label="Checklist" title="Checklist"><CheckSquare size={15}/></button>
+              <span className="toolbar-separator"/>
+              <button type="button" className={pageLinkPickerOpen || editor.isActive("link") ? "tool-active" : ""} aria-label="Link selected text" aria-expanded={pageLinkPickerOpen} title="Link selected text" onClick={() => { setPageLinkPickerOpen(value => !value); setPageLinkQuery(""); }}><Link2 size={15}/></button>
+              <button className={editor.isActive("blockquote") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleBlockquote().run()} aria-label="Quote" title="Quote"><Quote size={15}/></button>
+              <button className={editor.isActive("codeBlock") ? "tool-active" : ""} onClick={() => editor.chain().focus().toggleCodeBlock().run()} aria-label="Code block" title="Code block"><Code2 size={15}/></button>
+              {pageLinkPickerOpen && <div className="page-link-picker floating-link-picker" role="dialog" aria-label="Insert link">
+                <label className="page-link-search"><Search size={14}/><input autoFocus value={pageLinkQuery} onChange={(event) => setPageLinkQuery(event.target.value)} placeholder="Find a page…" aria-label="Find a page to link"/></label>
+                <button className="page-link-external" onClick={insertExternalLink}><ExternalLink size={14}/><span>Link to web address…</span></button>
+                <div className="page-link-options">
+                  {linkablePages.map((page) => <button key={page.id} onClick={() => insertPageLink(page)}><span className="page-link-picker-icon">{page.icon || "📄"}</span><span className="page-link-picker-copy"><strong>{page.title || "Untitled"}</strong><small>{page.kind === "database" ? "Database" : page.parentId ? "Subpage" : "Page"}</small></span></button>)}
+                  {linkablePages.length === 0 && <p>{pageLinkQuery ? "No matching pages." : "Create another page to link to it."}</p>}
+                </div>
+              </div>}
+            </div>}
+            <input ref={imageFileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden onChange={(event) => { handleImageFile(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
           </article>) : <div className="empty-state"><div className="empty-state-icon">{section === "trash" ? "🗑️" : "✳️"}</div><h2>{section === "trash" ? "Trash is empty" : "A little room to think"}</h2><p>{section === "trash" ? "Deleted pages will show up here." : "Create a page and start capturing your ideas."}</p>{section !== "trash" && <button className="primary-button" onClick={() => createNote()}><Plus size={16}/> Create a page</button>}</div>}
         </div>
         <footer className="statusbar"><div><span className="status-dot"/>{notes.filter(n => !n.trashed).length} pages <span className="status-separator">·</span> Local workspace</div><div className="status-shortcuts"><span><Command size={11}/> K to search</span><span><BookOpen size={12}/> Your space, your rules</span></div></footer>
