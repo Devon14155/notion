@@ -50,6 +50,12 @@ describe("parseWorkspaceBackup", () => {
     expect(parseWorkspaceBackup(JSON.stringify({ schemaVersion: 1, notes: [databaseNote] }))).toEqual([databaseNote]);
   });
 
+  it("preserves calendar database view configuration", () => {
+    const calendarDatabase: WorkspaceDatabase = { ...database, view: "calendar" };
+    const calendarNote: WorkspaceNote = { ...notes[0], kind: "database", database: calendarDatabase };
+    expect(parseWorkspaceBackup(JSON.stringify({ schemaVersion: 1, notes: [calendarNote] }))).toEqual([calendarNote]);
+  });
+
   it("rejects databases with no properties", () => {
     const malformed = { ...notes[0], kind: "database", database: { ...database, properties: [], rows: [] } };
     expect(() => parseWorkspaceBackup(JSON.stringify({ notes: [malformed] }))).toThrow(/Invalid workspace backup/);
