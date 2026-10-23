@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
-  Clock3, Star, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy, Download,
-  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal, CalendarDays, ChevronLeft, ChevronRight, Upload
+  Clock3, Trash2, Table2, LayoutGrid, Search, Plus, X, Copy, Download,
+  ArrowDownUp, ChevronDown, ChevronUp, SlidersHorizontal, CalendarDays, ChevronLeft, ChevronRight, Upload, MoreHorizontal
 } from "lucide-react";
 import type {
   DatabaseCell, DatabaseProperty, DatabasePropertyType, DatabaseRow, WorkspaceDatabase
@@ -12,12 +12,10 @@ type DatabaseViewProps = {
   title: string;
   icon: string;
   onIconChange: (icon: string) => void;
-  favorite: boolean;
   updatedAt: number;
   database: WorkspaceDatabase;
   onRename: (title: string) => void;
   onDatabaseChange: (database: WorkspaceDatabase) => void;
-  onToggleFavorite: () => void;
   onDuplicate: () => void;
   onTrash: () => void;
   onExportHtml: () => void;
@@ -53,18 +51,17 @@ export default function DatabaseView({
   title,
   icon,
   onIconChange,
-  favorite,
   updatedAt,
   database,
   onRename,
   onDatabaseChange,
-  onToggleFavorite,
   onDuplicate,
   onTrash,
   onExportHtml,
   onMessage
 }: DatabaseViewProps) {
   const [filter, setFilter] = useState("");
+  const [actionsOpen, setActionsOpen] = useState(false);
   const csvFileInputRef = useRef<HTMLInputElement>(null);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [sort, setSort] = useState<SortState>(null);
@@ -254,7 +251,10 @@ export default function DatabaseView({
     if (property.type === "number") {
       return <input className="database-cell-input" type="number" value={typeof value === "number" ? value : ""} onChange={(event) => updateCell(row.id, property.id, event.target.value === "" ? null : Number(event.target.value))} aria-label={label} />;
     }
-    return <input className={`database-cell-input ${property === titleProperty ? "database-title-cell" : ""}`} type="text" value={valueText(value)} onChange={(event) => updateCell(row.id, property.id, event.target.value)} aria-label={label} placeholder={property === titleProperty ? "Untitled" : "Empty"} />;
+    const textInput = <input className={`database-cell-input ${property === titleProperty ? "database-title-cell" : ""}`} type="text" value={valueText(value)} onChange={(event) => updateCell(row.id, property.id, event.target.value)} aria-label={label} placeholder={property === titleProperty ? "Untitled" : "Empty"} />;
+    return property === titleProperty
+      ? <div className="database-title-cell-wrap"><span aria-hidden="true">📄</span>{textInput}</div>
+      : textInput;
   };
 
   const statusValue = (row: DatabaseRow) => valueText(statusProperty ? row.cells[statusProperty.id] : undefined);
@@ -266,7 +266,6 @@ export default function DatabaseView({
         <div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change database icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen((value) => !value)}>{icon || "🗃️"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose database icon">{pageIcons.map((option) => <button key={option} type="button" className={icon === option ? "chosen" : ""} aria-label={`Use ${option} as database icon`} onClick={() => { onIconChange(option); setIconPickerOpen(false); }}>{option}</button>)}</div>}</div>
         <div className="page-actions">
           <span className="saved-label"><span className="status-dot" /> Saved locally</span>
-          <button className={`icon-button ${favorite ? "is-favorite" : ""}`} onClick={onToggleFavorite} aria-label={favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={favorite ? "currentColor" : "none"} /></button>
           <button className="icon-button" onClick={onDuplicate} aria-label="Duplicate database" title="Duplicate database"><Copy size={15} /></button>
           <button className="icon-button" onClick={onTrash} aria-label="Move database to trash"><Trash2 size={16} /></button>
         </div>
@@ -285,11 +284,16 @@ export default function DatabaseView({
         </div>
         <label className="database-filter"><Search size={14} /><input value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter database entries" placeholder="Filter entries..." /></label>
         <button className="database-action-button" onClick={() => { setAddingProperty((value) => !value); setPropertyError(""); }}><SlidersHorizontal size={14} /> Property</button>
-        <button className="database-action-button" onClick={onExportHtml} title="Export database as standalone HTML"><Download size={14} /> Export HTML</button>
-        <button className="database-action-button" onClick={exportCsv} title="Download CSV file"><Download size={14} /> Export CSV</button>
-        <button className="database-action-button" onClick={() => csvFileInputRef.current?.click()} title="Import a CSV file"><Upload size={14} /> Import CSV</button>
+        <div className="database-more-wrap">
+          <button className="database-action-button database-more-trigger" aria-label="More database actions" aria-expanded={actionsOpen} title="More database actions" onClick={() => setActionsOpen(value => !value)}><MoreHorizontal size={16} /></button>
+          {actionsOpen && <div className="database-more-menu" role="menu" aria-label="More database actions">
+            <button role="menuitem" onClick={() => { onExportHtml(); setActionsOpen(false); }}><Download size={14} /> Export HTML</button>
+            <button role="menuitem" onClick={() => { exportCsv(); setActionsOpen(false); }}><Download size={14} /> Export CSV</button>
+            <button role="menuitem" onClick={() => { csvFileInputRef.current?.click(); setActionsOpen(false); }}><Upload size={14} /> Import CSV</button>
+          </div>}
+        </div>
         <input ref={csvFileInputRef} type="file" accept=".csv,text/csv" hidden onChange={(event) => { void importCsv(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
-        <button className="database-action-button primary" onClick={addRow}><Plus size={14} /> New row</button>
+        <button className="database-action-button primary" onClick={addRow}><Plus size={14} /> New</button>
       </div>
 
       {addingProperty && <form className="database-property-form" onSubmit={(event) => { event.preventDefault(); addProperty(); }}>
