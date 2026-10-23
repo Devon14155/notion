@@ -4,11 +4,16 @@ import type { WorkspaceDatabase } from "./workspace";
 
 describe("serializeDatabaseCsv", () => {
   it("adds a real UTF-8 byte-order mark only for file downloads", () => {
-    const raw = serializeDatabaseCsv(database);
-    const download = databaseCsvFileContent(database);
+    const fixture: WorkspaceDatabase = {
+      view: "table",
+      properties: [{ id: "name", name: "Name", type: "text" }],
+      rows: [{ id: "row-1", cells: { name: "Plan" } }]
+    };
+    const raw = serializeDatabaseCsv(fixture);
+    const download = databaseCsvFileContent(fixture);
     expect(raw.charCodeAt(0)).not.toBe(0xfeff);
     expect(download.charCodeAt(0)).toBe(0xfeff);
-    expect(download).not.toContain("\\\\uFEFF");
+    expect(download).toContain("Name,");
   });
 
   it("exports properties in their existing order and serializes typed cell values", () => {
