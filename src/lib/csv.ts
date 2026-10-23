@@ -1,4 +1,4 @@
-import type { DatabaseCell, WorkspaceDatabase } from "./workspace";
+import type { DatabaseCell, DatabaseProperty, DatabaseRow, WorkspaceDatabase } from "./workspace";
 
 function escapeCsvCell(value: DatabaseCell | undefined): string {
   if (value === null || value === undefined) return "";
