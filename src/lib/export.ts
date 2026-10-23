@@ -1,3 +1,4 @@
+import createDOMPurify from "dompurify";
 import type { WorkspaceNote } from "./workspace";
 
 function escapeHtml(value: unknown): string {
@@ -10,12 +11,22 @@ function escapeHtml(value: unknown): string {
 }
 
 function sanitizeEditorHtml(html: string): string {
-  return html
-    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, "")
-    .replace(/<(script|style|iframe|frame|frameset|object|embed|form|input|button|textarea|select|option|meta|link|base)\b[^>]*\/?\s*>/gi, "")
-    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/\s+(href|src|xlink:href)\s*=\s*(["'])\s*(?:javascript|vbscript):[\s\S]*?\2/gi, "")
-    .replace(/\s+(href|src|xlink:href)\s*=\s*(?:javascript|vbscript):[^\s>]*/gi, "");
+  const purifier = createDOMPurify(window);
+  return purifier.sanitize(html, {
+    ALLOWED_TAGS: [
+      "a", "b", "blockquote", "br", "code", "del", "div", "em", "h1", "h2",
+      "h3", "h4", "h5", "h6", "hr", "i", "img", "input", "label", "li",
+      "ol", "p", "pre", "s", "span", "strong", "table", "tbody", "td",
+      "tfoot", "th", "thead", "tr", "u", "ul"
+    ],
+    ALLOWED_ATTR: [
+      "alt", "checked", "class", "colspan", "data-checked", "data-type",
+      "disabled", "height", "href", "rel", "rowspan", "src", "target",
+      "title", "type", "width"
+    ],
+    ALLOW_DATA_ATTR: false,
+    RETURN_TRUSTED_TYPE: false
+  });
 }
 function databaseTable(note: WorkspaceNote): string {
   const database = note.database;
