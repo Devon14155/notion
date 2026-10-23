@@ -7,6 +7,7 @@ import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
 import Image from "@tiptap/extension-image";
 import { duplicateWorkspaceNote, parseWorkspaceBackup, searchNotes, type WorkspaceDatabase } from "./lib/workspace";
+import { loadPersistedWorkspace, savePersistedWorkspace, type StorageBackend } from "./lib/persistence";
 import DatabaseView from "./components/DatabaseView";
 import PageTree from "./components/PageTree";
 import {
@@ -74,6 +75,11 @@ function loadNotes(): Note[] {
 
 function App() {
   const [notes, setNotes] = useState<Note[]>(loadNotes);
+  const [storageReady, setStorageReady] = useState(false);
+  const [storageBackend, setStorageBackend] = useState<StorageBackend>("indexeddb");
+  const previousBackendRef = useRef<StorageBackend>("indexeddb");
+  const latestNotesRef = useRef<Note[]>(notes);
+  const storageReadyRef = useRef(false);
   const [activeId, setActiveId] = useState("welcome");
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -90,9 +96,63 @@ function App() {
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
-    catch (error) { console.error("Could not persist workspace data", error); setToast("Storage is full. Export or remove some pages."); }
+    let cancelled = false;
+    void loadPersistedWorkspace().then((snapshot) => {
+      if (cancelled) return;
+      if (snapshot.notes) setNotes(snapshot.notes as Note[]);
+      setStorageBackend(snapshot.backend);
+      previousBackendRef.current = snapshot.backend;
+      latestNotesRef.current = (snapshot.notes ?? notes) as Note[];
+      storageReadyRef.current = true;
+      setStorageReady(true);
+      if (snapshot.backend === "localStorage") {
+        setToast("Using limited browser storage. Export backups regularly.");
+      }
+    }).catch((error: unknown) => {
+      if (cancelled) return;
+      console.error("Could not hydrate workspace data", error);
+      setStorageBackend("localStorage");
+      previousBackendRef.current = "localStorage";
+      storageReadyRef.current = true;
+      setStorageReady(true);
+      setToast("Workspace storage is limited. Export a JSON backup regularly.");
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    latestNotesRef.current = notes;
   }, [notes]);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    const timer = window.setTimeout(() => {
+      void savePersistedWorkspace(notes).then((backend) => {
+        setStorageBackend(backend);
+        if (backend !== previousBackendRef.current) {
+          previousBackendRef.current = backend;
+          if (backend === "localStorage") {
+            setToast("IndexedDB is unavailable. Using limited browser storage; export backups regularly.");
+          }
+        }
+      }).catch((error: unknown) => {
+        console.error("Could not persist workspace data", error);
+        setToast("Workspace could not be saved. Export a JSON backup and remove large items.");
+      });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [notes, storageReady]);
+
+  useEffect(() => {
+    if (!storageReady) return;
+    const flushOnPageHide = () => {
+      void savePersistedWorkspace(latestNotesRef.current).catch((error: unknown) => {
+        console.error("Could not flush the workspace before closing", error);
+      });
+    };
+    window.addEventListener("pagehide", flushOnPageHide);
+    return () => window.removeEventListener("pagehide", flushOnPageHide);
+  }, [storageReady]);
 
   useEffect(() => {
     if (!toast) return;
@@ -418,6 +478,10 @@ function App() {
 
   const filteredSlashCommands = slashMenu ? slashCommands.filter((command) => (command.label + " " + command.keywords).toLowerCase().includes(slashMenu.query)) : [];
 
+  if (!storageReady) {
+    return <div className="workspace-loading" role="status" aria-live="polite"><span className="workspace-loading-mark">✳</span><strong>Opening your workspace</strong><span>Reading your locally saved pages…</span></div>;
+  }
+
   return (
     <div className={dark ? "app-shell dark" : "app-shell"}>
       {mobileMenu && <button className="mobile-backdrop" aria-label="Close navigation" onClick={() => setMobileMenu(false)} />}
@@ -478,7 +542,7 @@ function App() {
 
         <div className="page-scroll">
           {activeNote ? (activeNote.kind === "database" && activeNote.database && section !== "trash" ? <DatabaseView title={activeNote.title} icon={activeNote.icon} onIconChange={choosePageIcon} favorite={activeNote.favorite} updatedAt={activeNote.updatedAt} database={activeNote.database} onRename={renameActive} onDatabaseChange={updateActiveDatabase} onToggleFavorite={toggleFavorite} onDuplicate={duplicateActive} onTrash={moveToTrash} /> : <article className="document">
-            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> Saved locally</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button>{section !== "trash" && <button className="icon-button" onClick={duplicateActive} aria-label="Duplicate page" title="Duplicate page"><Copy size={15}/></button>}<button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
+            <div className="page-actions-row"><div className="page-icon-picker-wrap"><button type="button" className="page-icon-large page-icon-picker-trigger" aria-label="Change page icon" aria-expanded={iconPickerOpen} onClick={() => setIconPickerOpen(value => !value)}>{activeNote.icon || "📄"}</button>{iconPickerOpen && <div className="page-icon-picker" role="group" aria-label="Choose page icon">{pageIcons.map(icon => <button key={icon} type="button" className={activeNote.icon === icon ? "chosen" : ""} aria-label={`Use ${icon} as page icon`} onClick={() => choosePageIcon(icon)}>{icon}</button>)}</div>}</div><div className="page-actions"><span className="saved-label"><span className="status-dot"/> {storageBackend === "indexeddb" ? "Saved on this device" : "Saved in browser storage"}</span><button className={`icon-button ${activeNote.favorite ? "is-favorite" : ""}`} onClick={toggleFavorite} aria-label={activeNote.favorite ? "Remove from favorites" : "Add to favorites"}><Star size={16} fill={activeNote.favorite ? "currentColor" : "none"}/></button>{section !== "trash" && <button className="icon-button" onClick={duplicateActive} aria-label="Duplicate page" title="Duplicate page"><Copy size={15}/></button>}<button className="icon-button" aria-label="Move page to trash" onClick={moveToTrash}><Trash2 size={16}/></button></div></div>
             <input className="document-title" value={activeNote.title} onChange={e => renameActive(e.target.value)} aria-label="Page title" placeholder="Untitled"/>
             <div className="document-meta"><span><Clock3 size={12}/> Edited {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(activeNote.updatedAt)}</span><span className="meta-divider">·</span><span>Private</span></div>
             {section === "trash" && <div className="trash-banner"><Trash2 size={16}/> This page is in the trash. <button onClick={() => restoreNote(activeNote.id)}>Restore page</button><button className="permanent-delete" onClick={() => permanentlyDelete(activeNote.id)}>Delete permanently</button></div>}
